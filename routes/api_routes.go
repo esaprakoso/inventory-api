@@ -12,7 +12,7 @@ func SetupRoutes(app *gin.Engine) {
 
 	// Auth routes
 	auth := api.Group("/auth")
-	auth.POST("/register", middleware.CheckUserExists(), handlers.Register)
+	auth.POST("/register", handlers.Register)
 	auth.POST("/login", handlers.Login)
 	auth.POST("/refresh", handlers.RefreshToken)
 
@@ -20,6 +20,7 @@ func SetupRoutes(app *gin.Engine) {
 	api.GET("/users", middleware.Protected(), middleware.AuthorizeRole("admin"), handlers.GetAllUsers)
 	api.GET("/users/:id", middleware.Protected(), middleware.AuthorizeRole("admin"), handlers.GetUserByID)
 	api.PATCH("/users/:id", middleware.Protected(), middleware.AuthorizeRole("admin"), handlers.UpdateUserByID)
+	api.DELETE("/users/:id", middleware.Protected(), middleware.AuthorizeRole("admin"), handlers.DeleteUserByID)
 
 	// Profile routes
 	api.GET("/profile", middleware.Protected(), handlers.GetUserProfile)
@@ -40,7 +41,11 @@ func SetupRoutes(app *gin.Engine) {
 	api.PUT("/products/:id", middleware.Protected(), middleware.AuthorizeRole("admin"), handlers.UpdateProductByID)
 	api.DELETE("/products/:id", middleware.Protected(), middleware.AuthorizeRole("admin"), handlers.DeleteProductByID)
 
-	// Product routes
+	// Stock routes
+	api.GET("/stocks", middleware.Protected(), handlers.GetStocks)
+	api.PUT("/stocks", middleware.Protected(), middleware.AuthorizeRole("admin"), handlers.UpsertStock)
+
+	// Category routes
 	api.GET("/categories", middleware.Protected(), handlers.GetCategories)
 	api.GET("/categories/:id", middleware.Protected(), handlers.GetCategoryByID)
 	api.POST("/categories", middleware.Protected(), middleware.AuthorizeRole("admin"), handlers.StoreCategory)

@@ -11,5 +11,5 @@ type User struct {
 	Name         string
 	RefreshToken string      `json:"-"`
 	Role         string      `gorm:"default:'user'"`
-	Warehouses   []Warehouse `gorm:"foreignKey:OwnerID" json:"warehouses"` // has-many relationship
+	Warehouses   []Warehouse `gorm:"foreignKey:OwnerID" json:"-"` // has-many relationship
 }

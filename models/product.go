@@ -9,5 +9,5 @@ type Product struct {
 	Price      float64
 	CategoryID *uint
 	Category   Category `gorm:"foreignKey:CategoryID;constraint:OnUpdate:CASCADE,OnDelete:SET NULL;"`
-	Stocks     []Stock  `gorm:"foreignKey:ProductID"`
+	Stocks     []Stock  `gorm:"foreignKey:ProductID" json:"-"`
 }

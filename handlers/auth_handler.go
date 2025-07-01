@@ -10,6 +10,8 @@ import (
 	"strconv"
 	"time"
 
+	"inventory/utils"
+
 	"github.com/gin-gonic/gin"
 	"github.com/golang-jwt/jwt/v4"
 	"golang.org/x/crypto/bcrypt"
@@ -29,18 +31,28 @@ func generateRefreshToken() (string, error) {
 }
 
 func Register(c *gin.Context) {
-	var data map[string]string
+	type CreateUserInput struct {
+		Username string  `json:"username" binding:"required"`
+		Name     string  `json:"name" binding:"required"`
+		Password *string `json:"password" binding:"required"`
+	}
+	var data CreateUserInput
 
-	if err := c.BindJSON(&data); err != nil {
+	if err := c.ShouldBindJSON(&data); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"message": err.Error()})
 		return
 	}
+	isDup, _ := utils.CheckDuplicate[models.User](database.DB, "username", data.Username, nil)
+	if isDup {
+		c.JSON(406, gin.H{"message": "Username already exists"})
+		return
+	}
 
-	password, _ := bcrypt.GenerateFromPassword([]byte(data["password"]), 14)
+	password, _ := bcrypt.GenerateFromPassword([]byte(*data.Password), 14)
 
 	user := models.User{
-		Username: data["username"],
-		Name:     data["name"],
+		Username: data.Username,
+		Name:     data.Name,
 		Password: string(password),
 		Role:     "user", // Set default role
 	}

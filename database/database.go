@@ -5,10 +5,13 @@ import (
 	"log"
 
 	"inventory/config"
-	"inventory/models"
+
+	"os"
+	"time"
 
 	"gorm.io/driver/postgres"
 	"gorm.io/gorm"
+	"gorm.io/gorm/logger"
 )
 
 var DB *gorm.DB
@@ -23,19 +26,23 @@ func Connect() {
 		config.LoadConfig("DB_PORT"),
 	)
 
-	DB, err = gorm.Open(postgres.Open(dsn), &gorm.Config{})
+	newLogger := logger.New(
+		log.New(os.Stdout, "\r\n", log.LstdFlags),
+		logger.Config{
+			SlowThreshold:             200 * time.Millisecond,
+			LogLevel:                  logger.Warn, // ⬅️ Hanya log warning/error
+			IgnoreRecordNotFoundError: true,        // ⬅️ Abaikan log untuk "record not found"
+			Colorful:                  true,
+		},
+	)
+
+	DB, err = gorm.Open(postgres.Open(dsn), &gorm.Config{
+		Logger: newLogger,
+	})
 	if err != nil {
 		log.Fatal("Failed to connect to database")
 	}
 
 	fmt.Println("Database connection successfully opened")
 
-	DB.AutoMigrate(
-		&models.User{},
-		&models.Warehouse{},
-		&models.Product{},
-		&models.Category{},
-		&models.Stock{},
-	)
-	fmt.Println("Database Migrated")
 }

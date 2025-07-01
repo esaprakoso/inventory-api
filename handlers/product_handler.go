@@ -2,11 +2,12 @@ package handlers
 
 import (
 	"inventory/database"
-	"inventory/helpers"
 	"inventory/models"
 	"net/http"
 
 	"github.com/gin-gonic/gin"
+
+	"inventory/utils"
 )
 
 func GetAllProducts(c *gin.Context) {
@@ -16,50 +17,36 @@ func GetAllProducts(c *gin.Context) {
 }
 
 func StoreProduct(c *gin.Context) {
-	var data map[string]any
+	type CreateProductInput struct {
+		Name       string  `json:"name" binding:"required"`
+		Price      float64 `json:"price" binding:"required"`
+		SKU        string  `json:"sku" binding:"required"`
+		CategoryID *uint   `json:"category_id"`
+	}
 
-	if err := c.BindJSON(&data); err != nil {
+	var data CreateProductInput
+
+	if err := c.ShouldBindJSON(&data); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"message": err.Error()})
 		return
 	}
 
-	price, err := helpers.GetFloat64(data["price"])
-	if err != nil {
-		c.JSON(http.StatusNotAcceptable, gin.H{
-			"message": err,
-		})
+	isDup, _ := utils.CheckDuplicate[models.Product](database.DB, "SKU", data.SKU, nil)
+	if isDup {
+		c.JSON(406, gin.H{"message": "Product SKU already exists"})
 		return
-	}
-
-	category_id, err := helpers.GetInt(data["category_id"])
-	if err != nil && data["category_id"] != nil {
-		c.JSON(http.StatusNotAcceptable, gin.H{
-			"message": err,
-		})
-		return
-	}
-
-	var categoryID *uint
-	if category_id != 0 {
-		categoryID = &[]uint{uint(category_id)}[0]
 	}
 
 	product := models.Product{
-		Name:       data["name"].(string),
-		SKU:        data["sku"].(string),
-		Price:      price,
-		CategoryID: categoryID,
+		Name:       data.Name,
+		SKU:        data.SKU,
+		Price:      data.Price,
+		CategoryID: data.CategoryID,
 	}
 
-	database.DB.Where("SKU = ?", product.SKU).First(&product)
-	if product.ID != 0 {
-		c.JSON(http.StatusBadRequest, gin.H{"message": "Product SKU already exists"})
-		return
-	}
+	database.DB.Create(&product)
 
-	database.DB.Preload("Category").Create(&product)
-
-	c.JSON(http.StatusOK, product)
+	c.JSON(http.StatusOK, gin.H{"message": "Product Created"})
 }
 
 func GetProductByID(c *gin.Context) {
@@ -81,9 +68,15 @@ func GetProductByID(c *gin.Context) {
 func UpdateProductByID(c *gin.Context) {
 	id := c.Param("id")
 
-	var data map[string]any
+	type UpdateProductInput struct {
+		Name       string  `json:"name" binding:"required"`
+		Price      float64 `json:"price" binding:"required"`
+		SKU        string  `json:"sku" binding:"required"`
+		CategoryID *uint   `json:"category_id"`
+	}
+	var data UpdateProductInput
 
-	if err := c.BindJSON(&data); err != nil {
+	if err := c.ShouldBindJSON(&data); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"message": err.Error()})
 		return
 	}
@@ -91,13 +84,9 @@ func UpdateProductByID(c *gin.Context) {
 	var product models.Product
 	database.DB.Preload("Category").First(&product, id)
 
-	var productCek models.Product
-	database.DB.First(&productCek, "SKU = ? and id != ?", data["sku"], id)
-
-	if productCek.ID != 0 {
-		c.JSON(http.StatusNotAcceptable, gin.H{
-			"message": "Product SKU already exists",
-		})
+	isDup, _ := utils.CheckDuplicate[models.Product](database.DB, "SKU", data.SKU, id)
+	if isDup {
+		c.JSON(406, gin.H{"message": "Product SKU already exists"})
 		return
 	}
 
@@ -108,35 +97,16 @@ func UpdateProductByID(c *gin.Context) {
 		return
 	}
 
-	price, err := helpers.GetFloat64(data["price"])
-	if err != nil {
-		c.JSON(http.StatusNotAcceptable, gin.H{
-			"message": err,
-		})
-		return
-	}
-
-	category_id, err := helpers.GetInt(data["category_id"])
-	if err != nil && data["category_id"] != nil {
-		c.JSON(http.StatusNotAcceptable, gin.H{
-			"message": err,
-		})
-		return
-	}
-
-	product.Name = data["name"].(string)
-	product.SKU = data["sku"].(string)
-	product.Price = price
-
-	var updatedCategoryID *uint
-	if category_id != 0 {
-		updatedCategoryID = &[]uint{uint(category_id)}[0]
-	}
-	product.CategoryID = updatedCategoryID
+	product.Name = data.Name
+	product.SKU = data.SKU
+	product.Price = data.Price
+	product.CategoryID = data.CategoryID
 
 	database.DB.Save(&product)
 
-	c.JSON(http.StatusOK, product)
+	c.JSON(http.StatusOK, gin.H{
+		"message": "Product updated",
+	})
 }
 
 func DeleteProductByID(c *gin.Context) {
@@ -153,7 +123,7 @@ func DeleteProductByID(c *gin.Context) {
 	}
 
 	database.DB.Delete(&product, id)
-	c.JSON(http.StatusNotFound, gin.H{
+	c.JSON(http.StatusOK, gin.H{
 		"message": "Product deleted",
 	})
 }
