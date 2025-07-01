@@ -43,6 +43,16 @@ func UpdateUserByID(c *gin.Context) {
 	var user models.User
 	database.DB.First(&user, id)
 
+	var userCek models.User
+	database.DB.First(&userCek, "username = ? and id != ?", data["username"], id)
+
+	if userCek.ID != 0 {
+		c.JSON(http.StatusNotAcceptable, gin.H{
+			"message": "Username already exists",
+		})
+		return
+	}
+
 	if user.ID == 0 {
 		c.JSON(http.StatusNotFound, gin.H{
 			"message": "User not found",

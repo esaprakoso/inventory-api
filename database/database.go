@@ -33,6 +33,9 @@ func Connect() {
 	DB.AutoMigrate(
 		&models.User{},
 		&models.Warehouse{},
+		&models.Product{},
+		&models.Category{},
+		&models.Stock{},
 	)
 	fmt.Println("Database Migrated")
 }

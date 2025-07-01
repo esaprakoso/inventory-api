@@ -27,8 +27,23 @@ func SetupRoutes(app *gin.Engine) {
 	api.PATCH("/profile/password", middleware.Protected(), handlers.UpdateProfilePassword)
 
 	// Warehouse routes
-	api.GET("/warehouse", middleware.Protected(), middleware.AuthorizeRole("admin"), handlers.GetAllWarehouses)
+	api.GET("/warehouse", middleware.Protected(), handlers.GetAllWarehouses)
+	api.GET("/warehouse/:id", middleware.Protected(), handlers.GetWarehouseByID)
 	api.POST("/warehouse", middleware.Protected(), middleware.AuthorizeRole("admin"), handlers.StoreWarehouse)
-	api.GET("/warehouse/:id", middleware.Protected(), middleware.AuthorizeRole("admin"), handlers.GetWarehouseByID)
 	api.PUT("/warehouse/:id", middleware.Protected(), middleware.AuthorizeRole("admin"), handlers.UpdateWarehouseByID)
+	api.DELETE("/warehouse/:id", middleware.Protected(), middleware.AuthorizeRole("admin"), handlers.DeleteWarehouseByID)
+
+	// Product routes
+	api.GET("/products", middleware.Protected(), handlers.GetAllProducts)
+	api.GET("/products/:id", middleware.Protected(), handlers.GetProductByID)
+	api.POST("/products", middleware.Protected(), middleware.AuthorizeRole("admin"), handlers.StoreProduct)
+	api.PUT("/products/:id", middleware.Protected(), middleware.AuthorizeRole("admin"), handlers.UpdateProductByID)
+	api.DELETE("/products/:id", middleware.Protected(), middleware.AuthorizeRole("admin"), handlers.DeleteProductByID)
+
+	// Product routes
+	api.GET("/categories", middleware.Protected(), handlers.GetCategories)
+	api.GET("/categories/:id", middleware.Protected(), handlers.GetCategoryByID)
+	api.POST("/categories", middleware.Protected(), middleware.AuthorizeRole("admin"), handlers.StoreCategory)
+	api.PUT("/categories/:id", middleware.Protected(), middleware.AuthorizeRole("admin"), handlers.UpdateCategoryByID)
+	api.DELETE("/categories/:id", middleware.Protected(), middleware.AuthorizeRole("admin"), handlers.DeleteCategoryByID)
 }

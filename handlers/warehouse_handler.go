@@ -10,8 +10,9 @@ import (
 )
 
 func GetAllWarehouses(c *gin.Context) {
+	OwnerID := c.GetString("user_id")
 	var warehouses []models.Warehouse
-	database.DB.Preload("Owner").Find(&warehouses)
+	database.DB.Where("owner_id = ?", OwnerID).Find(&warehouses)
 	c.JSON(http.StatusOK, warehouses)
 }
 
@@ -83,4 +84,23 @@ func UpdateWarehouseByID(c *gin.Context) {
 	database.DB.Save(&warehouse)
 
 	c.JSON(http.StatusOK, warehouse)
+}
+
+func DeleteWarehouseByID(c *gin.Context) {
+	id := c.Param("id")
+
+	var warehouse models.Warehouse
+	database.DB.First(&warehouse, id)
+
+	if warehouse.ID == 0 {
+		c.JSON(http.StatusNotFound, gin.H{
+			"message": "Warehouse not found",
+		})
+		return
+	}
+
+	database.DB.Delete(&warehouse, id)
+	c.JSON(http.StatusNotFound, gin.H{
+		"message": "Warehouse deleted",
+	})
 }
