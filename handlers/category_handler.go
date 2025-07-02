@@ -5,14 +5,28 @@ import (
 	"inventory/models"
 	"net/http"
 
-	"github.com/gin-gonic/gin"
 	"inventory/utils"
+
+	"github.com/gin-gonic/gin"
 )
 
 func GetCategories(c *gin.Context) {
 	var categories []models.Category
-	database.DB.Find(&categories)
-	c.JSON(http.StatusOK, categories)
+	var total int64
+
+	page, _ := utils.GetInt(c.DefaultQuery("page", "1"))
+	limit, _ := utils.GetInt(c.DefaultQuery("limit", "10"))
+	offset := (page - 1) * limit
+
+	database.DB.Model(&models.Category{}).Count(&total)
+	database.DB.Limit(limit).Offset(offset).Find(&categories)
+
+	c.JSON(http.StatusOK, gin.H{
+		"data":  categories,
+		"total": total,
+		"page":  page,
+		"limit": limit,
+	})
 }
 
 func StoreCategory(c *gin.Context) {
@@ -58,7 +72,9 @@ func GetCategoryByID(c *gin.Context) {
 		return
 	}
 
-	c.JSON(http.StatusOK, category)
+	c.JSON(http.StatusOK, gin.H{
+		"data": category,
+	})
 }
 
 func UpdateCategoryByID(c *gin.Context) {

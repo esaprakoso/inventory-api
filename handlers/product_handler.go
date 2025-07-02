@@ -11,9 +11,33 @@ import (
 )
 
 func GetAllProducts(c *gin.Context) {
-	var products []models.Product
-	database.DB.Preload("Category").Find(&products)
-	c.JSON(http.StatusOK, products)
+	type ProductResponse struct {
+		models.Product
+		CategoryName string `json:"category_name"`
+		Quantity     int    `json:"quantity"`
+	}
+
+	var products []ProductResponse
+	var total int64
+
+	page, _ := utils.GetInt(c.DefaultQuery("page", "1"))
+	limit, _ := utils.GetInt(c.DefaultQuery("limit", "10"))
+	offset := (page - 1) * limit
+
+	query := database.DB.Model(&models.Product{}).
+		Select("products.*, categories.name as category_name, COALESCE(stocks.quantity, 0) as quantity").
+		Joins("left join categories on categories.id = products.category_id").
+		Joins("left join stocks on stocks.product_id = products.id")
+
+	query.Count(&total)
+	query.Limit(limit).Offset(offset).Find(&products)
+
+	c.JSON(http.StatusOK, gin.H{
+		"data":  products,
+		"total": total,
+		"page":  page,
+		"limit": limit,
+	})
 }
 
 func StoreProduct(c *gin.Context) {
@@ -56,8 +80,19 @@ func StoreProduct(c *gin.Context) {
 func GetProductByID(c *gin.Context) {
 	id := c.Param("id")
 
-	var product models.Product
-	database.DB.Preload("Category").First(&product, id)
+	type ProductDetailResponse struct {
+		models.Product
+		CategoryName string `json:"category_name"`
+		Quantity     int    `json:"quantity"`
+	}
+
+	var product ProductDetailResponse
+	database.DB.Model(&models.Product{}).
+		Select("products.*, categories.name as category_name, COALESCE(stocks.quantity, 0) as quantity").
+		Joins("left join categories on categories.id = products.category_id").
+		Joins("left join stocks on stocks.product_id = products.id").
+		Where("products.id = ?", id).
+		First(&product)
 
 	if product.ID == 0 {
 		c.JSON(http.StatusNotFound, gin.H{
@@ -66,7 +101,9 @@ func GetProductByID(c *gin.Context) {
 		return
 	}
 
-	c.JSON(http.StatusOK, product)
+	c.JSON(http.StatusOK, gin.H{
+		"data": product,
+	})
 }
 
 func UpdateProductByID(c *gin.Context) {

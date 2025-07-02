@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"inventory/database"
 	"inventory/models"
+	"inventory/utils"
 	"net/http"
 	"strconv"
 
@@ -15,19 +16,30 @@ import (
 
 func GetStocks(c *gin.Context) {
 	var stocks []models.Stock
-	database.DB.Find(&stocks)
-	c.JSON(http.StatusOK, stocks)
+	var total int64
+
+	page, _ := utils.GetInt(c.DefaultQuery("page", "1"))
+	limit, _ := utils.GetInt(c.DefaultQuery("limit", "10"))
+	offset := (page - 1) * limit
+
+	database.DB.Model(&models.Stock{}).Count(&total)
+	database.DB.Limit(limit).Offset(offset).Find(&stocks)
+
+	c.JSON(http.StatusOK, gin.H{
+		"data":  stocks,
+		"total": total,
+		"page":  page,
+		"limit": limit,
+	})
 }
-
-
 
 func UpsertStock(c *gin.Context) {
 	type UpsertStockInput struct {
-		ProductID   uint                           `json:"product_id" binding:"required,exists=products-id"`
-		Quantity    uint                           `json:"quantity" binding:"required,gt=0"`
-		Type        models.StockTransactionType    `json:"type" binding:"required,oneof=in out"`
-		SubType     models.StockTransactionSubType `json:"sub_type" binding:"required"`
-		Notes       string                         `json:"notes"`
+		ProductID uint                           `json:"product_id" binding:"required,exists=products-id"`
+		Quantity  uint                           `json:"quantity" binding:"required,gt=0"`
+		Type      models.StockTransactionType    `json:"type" binding:"required,oneof=in out"`
+		SubType   models.StockTransactionSubType `json:"sub_type" binding:"required"`
+		Notes     string                         `json:"notes"`
 	}
 
 	var data UpsertStockInput
@@ -51,8 +63,7 @@ func UpsertStock(c *gin.Context) {
 	// The transaction type is now explicitly provided in the request
 	transactionType := data.Type
 
-	var transactionErr error
-	transactionErr = database.DB.Transaction(func(tx *gorm.DB) error {
+	transactionErr := database.DB.Transaction(func(tx *gorm.DB) error {
 		var stock models.Stock
 
 		// Lock the stock record for update to prevent race conditions

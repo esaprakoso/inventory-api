@@ -13,8 +13,21 @@ import (
 
 func GetAllUsers(c *gin.Context) {
 	var users []models.User
-	database.DB.Find(&users)
-	c.JSON(http.StatusOK, users)
+	var total int64
+
+	page, _ := utils.GetInt(c.DefaultQuery("page", "1"))
+	limit, _ := utils.GetInt(c.DefaultQuery("limit", "10"))
+	offset := (page - 1) * limit
+
+	database.DB.Model(&models.User{}).Count(&total)
+	database.DB.Limit(limit).Offset(offset).Find(&users)
+
+	c.JSON(http.StatusOK, gin.H{
+		"data":  users,
+		"total": total,
+		"page":  page,
+		"limit": limit,
+	})
 }
 
 func GetUserByID(c *gin.Context) {
@@ -30,7 +43,9 @@ func GetUserByID(c *gin.Context) {
 		return
 	}
 
-	c.JSON(http.StatusOK, user)
+	c.JSON(http.StatusOK, gin.H{
+		"data": user,
+	})
 }
 
 func UpdateUserByID(c *gin.Context) {

@@ -5,9 +5,10 @@ import (
 	"inventory/models"
 	"net/http"
 
+	"inventory/utils"
+
 	"github.com/gin-gonic/gin"
 	"golang.org/x/crypto/bcrypt"
-	"inventory/utils"
 )
 
 func GetUserProfile(c *gin.Context) {
@@ -23,7 +24,9 @@ func GetUserProfile(c *gin.Context) {
 		return
 	}
 
-	c.JSON(http.StatusOK, user)
+	c.JSON(http.StatusOK, gin.H{
+		"data": user,
+	})
 }
 
 func UpdateProfile(c *gin.Context) {

@@ -1,6 +1,10 @@
 package models
 
-import "gorm.io/gorm"
+import (
+	"time"
+
+	"gorm.io/gorm"
+)
 
 // StockTransactionType defines the direction of stock movement (in/out)
 
@@ -16,9 +20,9 @@ type StockTransactionSubType string
 
 const (
 	// Sub-types for stock in (In)
-	SubTypePurchase   StockTransactionSubType = "purchase"   // Stok masuk dari pembelian ke supplier
-	SubTypeReturn     StockTransactionSubType = "return"     // Stok masuk dari retur customer
-	SubTypeTransferIn StockTransactionSubType = "transfer_in"// Stok masuk dari transfer gudang lain
+	SubTypePurchase   StockTransactionSubType = "purchase"    // Stok masuk dari pembelian ke supplier
+	SubTypeReturn     StockTransactionSubType = "return"      // Stok masuk dari retur customer
+	SubTypeTransferIn StockTransactionSubType = "transfer_in" // Stok masuk dari transfer gudang lain
 
 	// Sub-types for stock out (Out)
 	SubTypeSale        StockTransactionSubType = "sale"         // Stok keluar karena penjualan
@@ -31,7 +35,10 @@ const (
 )
 
 type StockTransaction struct {
-	gorm.Model
+	ID        uint                    `gorm:"primarykey" json:"id"`
+	CreatedAt time.Time               `json:"created_at"`
+	UpdatedAt time.Time               `json:"updated_at"`
+	DeletedAt gorm.DeletedAt          `gorm:"index" json:"deleted_at,omitempty"`
 	StockID   uint                    `json:"stock_id"`
 	Stock     Stock                   `json:"stock"`
 	UserID    uint                    `json:"user_id"`
