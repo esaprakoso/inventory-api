@@ -17,7 +17,7 @@ func main() {
 
 	database.Connect()
 
-	// daftar validator
+	// register custom validators
 	if v, ok := binding.Validator.Engine().(*validator.Validate); ok {
 		validators.RegisterCustomValidators(v, database.DB)
 	}

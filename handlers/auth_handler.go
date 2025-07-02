@@ -17,7 +17,7 @@ import (
 	"golang.org/x/crypto/bcrypt"
 )
 
-type MyClaims struct {
+type AuthClaims struct {
 	jwt.RegisteredClaims
 	Issuer string `json:"issuer"`
 }
@@ -42,7 +42,11 @@ func Register(c *gin.Context) {
 		c.JSON(http.StatusBadRequest, gin.H{"message": err.Error()})
 		return
 	}
-	isDup, _ := utils.CheckDuplicate[models.User](database.DB, "username", data.Username, nil)
+	isDup, err := utils.IsDuplicate[models.User](database.DB, "username", data.Username, nil)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"message": "Database error"})
+		return
+	}
 	if isDup {
 		c.JSON(406, gin.H{"message": "Username already exists"})
 		return
@@ -54,7 +58,7 @@ func Register(c *gin.Context) {
 		Username: data.Username,
 		Name:     data.Name,
 		Password: string(password),
-		Role:     "user", // Set default role
+		Role:     models.RoleUser, // Set default role
 	}
 
 	database.DB.Create(&user)
@@ -63,16 +67,20 @@ func Register(c *gin.Context) {
 }
 
 func Login(c *gin.Context) {
-	var data map[string]string
+	type LoginInput struct {
+		Username string `json:"username" binding:"required"`
+		Password string `json:"password" binding:"required"`
+	}
+	var data LoginInput
 
-	if err := c.BindJSON(&data); err != nil {
+	if err := c.ShouldBindJSON(&data); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"message": err.Error()})
 		return
 	}
 
 	var user models.User
 
-	database.DB.Where("username = ?", data["username"]).First(&user)
+	database.DB.Where("username = ?", data.Username).First(&user)
 
 	if user.ID == 0 {
 		c.JSON(http.StatusNotFound, gin.H{
@@ -81,14 +89,14 @@ func Login(c *gin.Context) {
 		return
 	}
 
-	if err := bcrypt.CompareHashAndPassword([]byte(user.Password), []byte(data["password"])); err != nil {
+	if err := bcrypt.CompareHashAndPassword([]byte(user.Password), []byte(data.Password)); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{
 			"message": "Incorrect password",
 		})
 		return
 	}
 
-	claims := MyClaims{
+	claims := AuthClaims{
 		Issuer: strconv.Itoa(int(user.ID)),
 		RegisteredClaims: jwt.RegisteredClaims{
 			ExpiresAt: jwt.NewNumericDate(time.Now().Add(time.Hour * 24)),
@@ -140,7 +148,7 @@ func RefreshToken(c *gin.Context) {
 	}
 
 	// Generate new access token
-	claims := MyClaims{
+	claims := AuthClaims{
 		Issuer: strconv.Itoa(int(user.ID)),
 		RegisteredClaims: jwt.RegisteredClaims{
 			ExpiresAt: jwt.NewNumericDate(time.Now().Add(time.Hour * 24)),

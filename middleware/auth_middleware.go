@@ -28,7 +28,7 @@ func Protected() gin.HandlerFunc {
 
 		tokenString := parts[1]
 
-		claims := &handlers.MyClaims{}
+		claims := &handlers.AuthClaims{}
 		token, err := jwtGo.ParseWithClaims(tokenString, claims, func(token *jwtGo.Token) (any, error) {
 			return []byte(config.LoadConfig("JWT_SECRET")), nil
 		})

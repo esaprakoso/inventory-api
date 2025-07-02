@@ -27,12 +27,7 @@ func SetupRoutes(app *gin.Engine) {
 	api.PATCH("/profile", middleware.Protected(), handlers.GetUserProfile)
 	api.PATCH("/profile/password", middleware.Protected(), handlers.UpdateProfilePassword)
 
-	// Warehouse routes
-	api.GET("/warehouse", middleware.Protected(), handlers.GetAllWarehouses)
-	api.GET("/warehouse/:id", middleware.Protected(), handlers.GetWarehouseByID)
-	api.POST("/warehouse", middleware.Protected(), middleware.AuthorizeRole("admin"), handlers.StoreWarehouse)
-	api.PUT("/warehouse/:id", middleware.Protected(), middleware.AuthorizeRole("admin"), handlers.UpdateWarehouseByID)
-	api.DELETE("/warehouse/:id", middleware.Protected(), middleware.AuthorizeRole("admin"), handlers.DeleteWarehouseByID)
+	
 
 	// Product routes
 	api.GET("/products", middleware.Protected(), handlers.GetAllProducts)
@@ -43,7 +38,7 @@ func SetupRoutes(app *gin.Engine) {
 
 	// Stock routes
 	api.GET("/stocks", middleware.Protected(), handlers.GetStocks)
-	api.PUT("/stocks", middleware.Protected(), middleware.AuthorizeRole("admin"), handlers.UpsertStock)
+	api.POST("/stocks", middleware.Protected(), middleware.AuthorizeRole("admin"), handlers.UpsertStock)
 
 	// Category routes
 	api.GET("/categories", middleware.Protected(), handlers.GetCategories)

@@ -6,7 +6,7 @@ import (
 	"gorm.io/gorm"
 )
 
-func CheckDuplicate[T any](db *gorm.DB, field string, value any, excludeID any) (bool, error) {
+func IsDuplicate[T any](db *gorm.DB, field string, value any, excludeID any) (bool, error) {
 	var result T
 	query := db.Where(field+" = ?", value)
 
@@ -17,10 +17,10 @@ func CheckDuplicate[T any](db *gorm.DB, field string, value any, excludeID any) 
 	err := query.First(&result).Error
 	if err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
-			return false, nil // tidak duplikat
+			return false, nil // not a duplicate
 		}
-		return false, err // error lain
+		return false, err // other error
 	}
 
-	return true, nil // ditemukan → duplikat
+	return true, nil // found -> duplicate
 }

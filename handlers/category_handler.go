@@ -6,6 +6,7 @@ import (
 	"net/http"
 
 	"github.com/gin-gonic/gin"
+	"inventory/utils"
 )
 
 func GetCategories(c *gin.Context) {
@@ -15,21 +16,28 @@ func GetCategories(c *gin.Context) {
 }
 
 func StoreCategory(c *gin.Context) {
-	var data map[string]string
+	type CreateCategoryInput struct {
+		Name string `json:"name" binding:"required"`
+	}
+	var data CreateCategoryInput
 
-	if err := c.BindJSON(&data); err != nil {
+	if err := c.ShouldBindJSON(&data); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"message": err.Error()})
 		return
 	}
 
-	category := models.Category{
-		Name: data["name"],
+	isDup, err := utils.IsDuplicate[models.Category](database.DB, "name", data.Name, nil)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"message": "Database error"})
+		return
 	}
-
-	database.DB.Where("name = ?", category.Name).First(&category)
-	if category.ID != 0 {
+	if isDup {
 		c.JSON(http.StatusBadRequest, gin.H{"message": "Category already exists"})
 		return
+	}
+
+	category := models.Category{
+		Name: data.Name,
 	}
 
 	database.DB.Create(&category)
@@ -56,9 +64,12 @@ func GetCategoryByID(c *gin.Context) {
 func UpdateCategoryByID(c *gin.Context) {
 	id := c.Param("id")
 
-	var data map[string]string
+	type UpdateCategoryInput struct {
+		Name string `json:"name" binding:"required"`
+	}
+	var data UpdateCategoryInput
 
-	if err := c.BindJSON(&data); err != nil {
+	if err := c.ShouldBindJSON(&data); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"message": err.Error()})
 		return
 	}
@@ -73,7 +84,17 @@ func UpdateCategoryByID(c *gin.Context) {
 		return
 	}
 
-	category.Name = data["name"]
+	isDup, err := utils.IsDuplicate[models.Category](database.DB, "name", data.Name, id)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"message": "Database error"})
+		return
+	}
+	if isDup {
+		c.JSON(http.StatusBadRequest, gin.H{"message": "Category name already exists"})
+		return
+	}
+
+	category.Name = data.Name
 
 	database.DB.Save(&category)
 

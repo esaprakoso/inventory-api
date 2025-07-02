@@ -38,7 +38,7 @@ func UpdateUserByID(c *gin.Context) {
 	type UpdateUserInput struct {
 		Username string  `json:"username" binding:"required"`
 		Name     string  `json:"name" binding:"required"`
-		Role     string  `json:"role" binding:"required"`
+		Role     string  `json:"role" binding:"required,oneof=admin user"`
 		Password *string `json:"password"`
 	}
 
@@ -52,7 +52,11 @@ func UpdateUserByID(c *gin.Context) {
 	var user models.User
 	database.DB.First(&user, id)
 
-	isDup, _ := utils.CheckDuplicate[models.User](database.DB, "username", data.Username, id)
+	isDup, err := utils.IsDuplicate[models.User](database.DB, "username", data.Username, id)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"message": "Database error"})
+		return
+	}
 	if isDup {
 		c.JSON(406, gin.H{"message": "Username already exists"})
 		return
@@ -69,7 +73,11 @@ func UpdateUserByID(c *gin.Context) {
 	user.Name = data.Name
 	user.Role = data.Role
 	if data.Password != nil {
-		password, _ := bcrypt.GenerateFromPassword([]byte(*data.Password), 14)
+		password, err := bcrypt.GenerateFromPassword([]byte(*data.Password), 14)
+		if err != nil {
+			c.JSON(http.StatusInternalServerError, gin.H{"message": "Failed to hash password"})
+			return
+		}
 		user.Password = string(password)
 	}
 

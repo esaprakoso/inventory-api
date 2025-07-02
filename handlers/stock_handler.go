@@ -19,19 +19,11 @@ func GetStocks(c *gin.Context) {
 	c.JSON(http.StatusOK, stocks)
 }
 
-func GetStockByWarehouseID(c *gin.Context) {
-	WarehouseID := c.Param("warehouse_id")
 
-	var stocks models.Stock
-	database.DB.Where("warehouse_id = ?", WarehouseID).Preload("Product").Find(&stocks)
-
-	c.JSON(http.StatusOK, stocks)
-}
 
 func UpsertStock(c *gin.Context) {
 	type UpsertStockInput struct {
 		ProductID   uint                           `json:"product_id" binding:"required,exists=products-id"`
-		WarehouseID uint                           `json:"warehouse_id" binding:"required,exists=warehouses-id"`
 		Quantity    uint                           `json:"quantity" binding:"required,gt=0"`
 		Type        models.StockTransactionType    `json:"type" binding:"required,oneof=in out"`
 		SubType     models.StockTransactionSubType `json:"sub_type" binding:"required"`
@@ -45,26 +37,27 @@ func UpsertStock(c *gin.Context) {
 	}
 
 	// Get user ID from context
-	userIDStr, exists := c.Get("user_id")
-	if !exists {
-		c.JSON(http.StatusUnauthorized, gin.H{"message": "User not found in context"})
+	userIDStr := c.GetString("user_id")
+	if userIDStr == "" {
+		c.JSON(http.StatusUnauthorized, gin.H{"message": "User ID not found in context"})
 		return
 	}
-	userID, err := strconv.ParseUint(userIDStr.(string), 10, 32)
+	userID, err := strconv.ParseUint(userIDStr, 10, 32)
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"message": "Invalid user ID format"})
+		c.JSON(http.StatusInternalServerError, gin.H{"message": "Invalid User ID format in context"})
 		return
 	}
 
 	// The transaction type is now explicitly provided in the request
 	transactionType := data.Type
 
-	err = database.DB.Transaction(func(tx *gorm.DB) error {
+	var transactionErr error
+	transactionErr = database.DB.Transaction(func(tx *gorm.DB) error {
 		var stock models.Stock
 
 		// Lock the stock record for update to prevent race conditions
 		err := tx.Clauses(clause.Locking{Strength: "UPDATE"}).
-			Where("warehouse_id = ? AND product_id = ?", data.WarehouseID, data.ProductID).
+			Where("product_id = ?", data.ProductID).
 			First(&stock).Error
 
 		if err != nil {
@@ -74,9 +67,8 @@ func UpsertStock(c *gin.Context) {
 					return fmt.Errorf("stock not found, cannot perform 'out' transaction")
 				}
 				stock = models.Stock{
-					ProductID:   data.ProductID,
-					WarehouseID: data.WarehouseID,
-					Quantity:    int(data.Quantity),
+					ProductID: data.ProductID,
+					Quantity:  int(data.Quantity),
 				}
 				if err := tx.Create(&stock).Error; err != nil {
 					return fmt.Errorf("failed to create stock: %w", err)
@@ -120,8 +112,8 @@ func UpsertStock(c *gin.Context) {
 		return nil
 	})
 
-	if err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"message": err.Error()})
+	if transactionErr != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"message": transactionErr.Error()})
 		return
 	}
 

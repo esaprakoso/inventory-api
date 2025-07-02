@@ -31,7 +31,11 @@ func StoreProduct(c *gin.Context) {
 		return
 	}
 
-	isDup, _ := utils.CheckDuplicate[models.Product](database.DB, "SKU", data.SKU, nil)
+	isDup, err := utils.IsDuplicate[models.Product](database.DB, "SKU", data.SKU, nil)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"message": "Database error"})
+		return
+	}
 	if isDup {
 		c.JSON(406, gin.H{"message": "Product SKU already exists"})
 		return
@@ -84,7 +88,11 @@ func UpdateProductByID(c *gin.Context) {
 	var product models.Product
 	database.DB.Preload("Category").First(&product, id)
 
-	isDup, _ := utils.CheckDuplicate[models.Product](database.DB, "SKU", data.SKU, id)
+	isDup, err := utils.IsDuplicate[models.Product](database.DB, "SKU", data.SKU, id)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"message": "Database error"})
+		return
+	}
 	if isDup {
 		c.JSON(406, gin.H{"message": "Product SKU already exists"})
 		return

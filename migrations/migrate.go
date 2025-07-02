@@ -9,7 +9,7 @@ import (
 func Migrate() {
 	database.DB.AutoMigrate(
 		&models.User{},
-		&models.Warehouse{},
+		
 		&models.Category{},
 		&models.Product{},
 		&models.Stock{},

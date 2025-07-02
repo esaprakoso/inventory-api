@@ -2,7 +2,7 @@ package models
 
 import "gorm.io/gorm"
 
-// StockTransactionType mendefinisikan arah pergerakan stok (masuk/keluar)
+// StockTransactionType defines the direction of stock movement (in/out)
 
 type StockTransactionType string
 
@@ -11,22 +11,22 @@ const (
 	StockTransactionTypeOut StockTransactionType = "out"
 )
 
-// StockTransactionSubType mendefinisikan alasan spesifik dari transaksi
+// StockTransactionSubType defines the specific reason for the transaction
 type StockTransactionSubType string
 
 const (
-	// Sub-tipe untuk stok masuk (In)
+	// Sub-types for stock in (In)
 	SubTypePurchase   StockTransactionSubType = "purchase"   // Stok masuk dari pembelian ke supplier
 	SubTypeReturn     StockTransactionSubType = "return"     // Stok masuk dari retur customer
 	SubTypeTransferIn StockTransactionSubType = "transfer_in"// Stok masuk dari transfer gudang lain
 
-	// Sub-tipe untuk stok keluar (Out)
+	// Sub-types for stock out (Out)
 	SubTypeSale        StockTransactionSubType = "sale"         // Stok keluar karena penjualan
 	SubTypeDamaged     StockTransactionSubType = "damaged"      // Stok keluar karena rusak
 	SubTypeExpired     StockTransactionSubType = "expired"      // Stok keluar karena kadaluarsa
 	SubTypeTransferOut StockTransactionSubType = "transfer_out" // Stok keluar untuk transfer ke gudang lain
 
-	// Sub-tipe umum
+	// General sub-type
 	SubTypeAdjustment StockTransactionSubType = "adjustment" // Penyesuaian hasil stock opname
 )
 
@@ -36,8 +36,8 @@ type StockTransaction struct {
 	Stock     Stock                   `json:"stock"`
 	UserID    uint                    `json:"user_id"`
 	User      User                    `json:"user"`
-	Quantity  int                     `json:"quantity"` // Kuantitas selalu positif
-	Type      StockTransactionType    `json:"type"`     // Tipe: 'in' atau 'out'
-	SubType   StockTransactionSubType `json:"sub_type"` // Alasan spesifik transaksi
+	Quantity  int                     `json:"quantity"` // Quantity is always positive
+	Type      StockTransactionType    `json:"type"`     // Type: 'in' or 'out'
+	SubType   StockTransactionSubType `json:"sub_type"` // Specific reason for the transaction
 	Notes     string                  `json:"notes"`
 }

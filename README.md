@@ -1,12 +1,12 @@
 # Inventory Management API
 
-This is a simple inventory management API built with Go and Gin. It provides endpoints for managing users, warehouses, products, categories, and stocks.
+This is a simple inventory management API built with Go and Gin. It provides endpoints for managing users, products, categories, and stocks.
 
 ## Features
 
 * User authentication (registration, login, refresh token)
 * Role-based authorization (admin, user)
-* CRUD operations for users, warehouses, products, and categories
+* CRUD operations for users, products, and categories
 * Stock management
 
 ## Getting Started
@@ -64,13 +64,7 @@ All endpoints are prefixed with `/api`.
 * `PATCH /profile`: Update the current user's profile.
 * `PATCH /profile/password`: Update the current user's password.
 
-### Warehouses
 
-* `GET /warehouse`: Get all warehouses.
-* `GET /warehouse/:id`: Get a warehouse by ID.
-* `POST /warehouse`: Create a new warehouse (admin only).
-* `PUT /warehouse/:id`: Update a warehouse by ID (admin only).
-* `DELETE /warehouse/:id`: Delete a warehouse by ID (admin only).
 
 ### Products
 
@@ -79,6 +73,11 @@ All endpoints are prefixed with `/api`.
 * `POST /products`: Create a new product (admin only).
 * `PUT /products/:id`: Update a product by ID (admin only).
 * `DELETE /products/:id`: Delete a product by ID (admin only).
+
+### Stocks
+
+* `GET /stocks`: Get all stocks.
+* `POST /stocks`: Create or update stock (admin only).
 
 ### Categories
 
@@ -93,7 +92,7 @@ All endpoints are prefixed with `/api`.
 The database schema consists of the following tables:
 
 * `users`
-* `warehouses`
+
 * `products`
 * `categories`
 * `stocks`
