@@ -3,6 +3,7 @@ package handlers
 import (
 	"crypto/rand"
 	"encoding/base64"
+	"fmt"
 	"net/http"
 	"pos/config"
 	"pos/database"
@@ -42,10 +43,6 @@ type RefreshTokenInput struct {
 	RefreshToken string `json:"refresh_token"`
 }
 
-type ErrorResponse struct {
-	Message string `json:"message"`
-}
-
 func generateRefreshToken() (string, error) {
 	b := make([]byte, 32)
 	if _, err := rand.Read(b); err != nil {
@@ -60,29 +57,30 @@ func generateRefreshToken() (string, error) {
 // @Accept  json
 // @Produce  json
 // @Param   user     body    CreateUserInput     true        "User registration info"
-// @Success 200 {object} models.User
-// @Failure 400 {object} ErrorResponse
-// @Failure 406 {object} ErrorResponse
-// @Failure 500 {object} ErrorResponse
+// @Success 201 {object} models.User
+// @Failure 400 {object} models.MessageResponse
+// @Failure 406 {object} models.MessageResponse
+// @Failure 500 {object} models.MessageResponse
 // @Router /auth/register [post]
 func Register(c *gin.Context) {
 	var data CreateUserInput
 
 	if err := c.ShouldBindJSON(&data); err != nil {
-		c.JSON(http.StatusBadRequest, ErrorResponse{
+		c.JSON(http.StatusBadRequest, models.MessageResponse{
 			Message: err.Error(),
 		})
 		return
 	}
 	isDup, err := utils.IsDuplicate[models.User](database.DB, "username", data.Username, nil)
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, ErrorResponse{
+		fmt.Printf("%s", err.Error())
+		c.JSON(http.StatusInternalServerError, models.MessageResponse{
 			Message: "Database error",
 		})
 		return
 	}
 	if isDup {
-		c.JSON(406, ErrorResponse{
+		c.JSON(406, models.MessageResponse{
 			Message: "Username already exists",
 		})
 		return
@@ -99,7 +97,7 @@ func Register(c *gin.Context) {
 
 	database.DB.Create(&user)
 
-	c.JSON(http.StatusOK, user)
+	c.JSON(http.StatusCreated, user)
 }
 
 // @Summary Login a user
@@ -109,15 +107,15 @@ func Register(c *gin.Context) {
 // @Produce  json
 // @Param   credentials body LoginInput true "User login credentials"
 // @Success 200 {object} LoginResponse
-// @Failure 400 {object} ErrorResponse
-// @Failure 401 {object} ErrorResponse
-// @Failure 404 {object} ErrorResponse
+// @Failure 400 {object} models.MessageResponse
+// @Failure 401 {object} models.MessageResponse
+// @Failure 404 {object} models.MessageResponse
 // @Router /auth/login [post]
 func Login(c *gin.Context) {
 	var data LoginInput
 
 	if err := c.ShouldBindJSON(&data); err != nil {
-		c.JSON(http.StatusBadRequest, ErrorResponse{
+		c.JSON(http.StatusBadRequest, models.MessageResponse{
 			Message: err.Error(),
 		})
 		return
@@ -128,14 +126,14 @@ func Login(c *gin.Context) {
 	database.DB.Where("username = ?", data.Username).First(&user)
 
 	if user.ID == 0 {
-		c.JSON(http.StatusNotFound, ErrorResponse{
+		c.JSON(http.StatusNotFound, models.MessageResponse{
 			Message: "User not found",
 		})
 		return
 	}
 
 	if err := bcrypt.CompareHashAndPassword([]byte(user.Password), []byte(data.Password)); err != nil {
-		c.JSON(http.StatusBadRequest, ErrorResponse{
+		c.JSON(http.StatusBadRequest, models.MessageResponse{
 			Message: "Incorrect password",
 		})
 		return
@@ -153,7 +151,7 @@ func Login(c *gin.Context) {
 	tokenString, err := token.SignedString([]byte(config.LoadConfig("JWT_SECRET")))
 
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, ErrorResponse{
+		c.JSON(http.StatusInternalServerError, models.MessageResponse{
 			Message: "Could not login",
 		})
 		return
@@ -161,7 +159,7 @@ func Login(c *gin.Context) {
 
 	refreshToken, err := generateRefreshToken()
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, ErrorResponse{
+		c.JSON(http.StatusInternalServerError, models.MessageResponse{
 			Message: "Could not generate refresh token",
 		})
 		return
@@ -183,8 +181,8 @@ func Login(c *gin.Context) {
 // @Produce  json
 // @Param   token    body    RefreshTokenInput true "Refresh token"
 // @Success 200 {object} LoginResponse
-// @Failure 400 {object} ErrorResponse
-// @Failure 401 {object} ErrorResponse
+// @Failure 400 {object} models.MessageResponse
+// @Failure 401 {object} models.MessageResponse
 // @Router /auth/refresh [post]
 func RefreshToken(c *gin.Context) {
 	var data struct {
@@ -192,7 +190,7 @@ func RefreshToken(c *gin.Context) {
 	}
 
 	if err := c.BindJSON(&data); err != nil {
-		c.JSON(http.StatusBadRequest, ErrorResponse{Message: "Invalid request body"})
+		c.JSON(http.StatusBadRequest, models.MessageResponse{Message: "Invalid request body"})
 		return
 	}
 
@@ -200,7 +198,7 @@ func RefreshToken(c *gin.Context) {
 	database.DB.Where("refresh_token = ?", data.RefreshToken).First(&user)
 
 	if user.ID == 0 {
-		c.JSON(http.StatusUnauthorized, ErrorResponse{Message: "Invalid refresh token"})
+		c.JSON(http.StatusUnauthorized, models.MessageResponse{Message: "Invalid refresh token"})
 		return
 	}
 
@@ -214,14 +212,14 @@ func RefreshToken(c *gin.Context) {
 	token := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
 	tokenString, err := token.SignedString([]byte(config.LoadConfig("JWT_SECRET")))
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, ErrorResponse{Message: "Could not generate access token"})
+		c.JSON(http.StatusInternalServerError, models.MessageResponse{Message: "Could not generate access token"})
 		return
 	}
 
 	// Generate new refresh token
 	newRefreshToken, err := generateRefreshToken()
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, ErrorResponse{Message: "Could not generate new refresh token"})
+		c.JSON(http.StatusInternalServerError, models.MessageResponse{Message: "Could not generate new refresh token"})
 		return
 	}
 

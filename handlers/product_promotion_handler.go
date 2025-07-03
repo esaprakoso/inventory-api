@@ -2,12 +2,33 @@ package handlers
 
 import (
 	"net/http"
+	"time"
 
 	"pos/database"
 	"pos/models"
 
 	"github.com/gin-gonic/gin"
 )
+
+type ProductPromotionInput struct {
+	ProductID        uint      `json:"product_id"`
+	PromotionType    string    `json:"promotion_type"` // e.g., "percentage_discount", "fixed_discount", "buy_x_get_y", "bundle_price"
+	DiscountValue    float64   `json:"discount_value,omitempty"`
+	BuyProductID     *uint     `json:"buy_product_id,omitempty"`
+	GetProductID     *uint     `json:"get_product_id,omitempty"`
+	RequiredQuantity *int      `json:"required_quantity,omitempty"` // For "bundle_price" or "buy_x_get_y"
+	PromoPrice       *float64  `json:"promo_price,omitempty"`       // For "bundle_price"
+	StartDate        time.Time `json:"start_date"`
+	EndDate          time.Time `json:"end_date"`
+}
+
+type ProductPromotionsResponse struct {
+	Data []models.ProductPromotion `json:"data"`
+}
+
+type ProductPromotionResponse struct {
+	Data models.ProductPromotion `json:"data"`
+}
 
 // CreatePromotion handles the creation of a new promotion
 // @Summary Create a new product promotion
@@ -16,16 +37,16 @@ import (
 // @Accept  json
 // @Produce  json
 // @Security BearerAuth
-// @Param   promotion body    models.ProductPromotion true "Promotion data"
-// @Success 201 {object} map[string]interface{}
-// @Failure 400 {object} map[string]interface{}
-// @Failure 401 {object} map[string]interface{}
-// @Failure 500 {object} map[string]interface{}
+// @Param   promotion body    ProductPromotionInput true "Promotion data"
+// @Success 201 {object} models.MessageResponse
+// @Failure 400 {object} models.MessageResponse
+// @Failure 401 {object} models.MessageResponse
+// @Failure 500 {object} models.MessageResponse
 // @Router /product-promotions [post]
 func CreateProductPromotion(c *gin.Context) {
-	var promotion models.ProductPromotion
+	var promotion ProductPromotionInput
 	if err := c.ShouldBindJSON(&promotion); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"status": "error", "message": "Invalid request body", "data": err.Error()})
+		c.JSON(http.StatusBadRequest, models.MessageResponse{Message: "Invalid request body"})
 		return
 	}
 
@@ -33,35 +54,35 @@ func CreateProductPromotion(c *gin.Context) {
 	switch promotion.PromotionType {
 	case "buy_x_get_y":
 		if promotion.BuyProductID == nil || promotion.GetProductID == nil {
-			c.JSON(http.StatusBadRequest, gin.H{"status": "error", "message": "BuyProductID and GetProductID are required for buy_x_get_y promotion"})
+			c.JSON(http.StatusBadRequest, models.MessageResponse{Message: "BuyProductID and GetProductID are required for buy_x_get_y promotion"})
 			return
 		}
 	case "percentage_discount", "fixed_discount":
 		if promotion.DiscountValue <= 0 {
-			c.JSON(http.StatusBadRequest, gin.H{"status": "error", "message": "DiscountValue must be greater than 0 for discount promotions"})
+			c.JSON(http.StatusBadRequest, models.MessageResponse{Message: "DiscountValue must be greater than 0 for discount promotions"})
 			return
 		}
 	case "bundle_price":
 		if promotion.RequiredQuantity == nil || promotion.PromoPrice == nil || *promotion.RequiredQuantity <= 0 || *promotion.PromoPrice <= 0 {
-			c.JSON(http.StatusBadRequest, gin.H{"status": "error", "message": "RequiredQuantity and PromoPrice must be greater than 0 for bundle_price promotion"})
+			c.JSON(http.StatusBadRequest, models.MessageResponse{Message: "RequiredQuantity and PromoPrice must be greater than 0 for bundle_price promotion"})
 			return
 		}
 	default:
-		c.JSON(http.StatusBadRequest, gin.H{"status": "error", "message": "Invalid promotion type"})
+		c.JSON(http.StatusBadRequest, models.MessageResponse{Message: "Invalid promotion type"})
 		return
 	}
 
 	if promotion.EndDate.Before(promotion.StartDate) {
-		c.JSON(http.StatusBadRequest, gin.H{"status": "error", "message": "End date cannot be before start date"})
+		c.JSON(http.StatusBadRequest, models.MessageResponse{Message: "End date cannot be before start date"})
 		return
 	}
 
 	if err := database.DB.Create(&promotion).Error; err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"status": "error", "message": "Could not create promotion", "data": err.Error()})
+		c.JSON(http.StatusInternalServerError, models.MessageResponse{Message: "Could not create promotion"})
 		return
 	}
 
-	c.JSON(http.StatusCreated, gin.H{"status": "success", "message": "Product Promotion created", "data": promotion})
+	c.JSON(http.StatusCreated, models.MessageResponse{Message: "Product Promotion created"})
 }
 
 // GetPromotions handles fetching all promotions
@@ -70,13 +91,12 @@ func CreateProductPromotion(c *gin.Context) {
 // @Tags Promotions
 // @Produce  json
 // @Security BearerAuth
-// @Success 200 {object} map[string]interface{}
-// @Failure 401 {object} map[string]interface{}
+// @Success 200 {object} ProductPromotionsResponse
 // @Router /product-promotions [get]
 func GetProductPromotions(c *gin.Context) {
 	var promotions []models.ProductPromotion
 	database.DB.Find(&promotions)
-	c.JSON(http.StatusOK, gin.H{"status": "success", "message": "Promotions fetched", "data": promotions})
+	c.JSON(http.StatusOK, ProductPromotionsResponse{Data: promotions})
 }
 
 // GetPromotion handles fetching a single promotion by ID
@@ -86,18 +106,17 @@ func GetProductPromotions(c *gin.Context) {
 // @Produce  json
 // @Security BearerAuth
 // @Param   id      path    int     true        "Promotion ID"
-// @Success 200 {object} map[string]interface{}
-// @Failure 401 {object} map[string]interface{}
-// @Failure 404 {object} map[string]interface{}
+// @Success 200 {object} ProductPromotionResponse
+// @Failure 404 {object} models.MessageResponse
 // @Router /product-promotions/{id} [get]
 func GetProductPromotion(c *gin.Context) {
 	id := c.Param("id")
 	var promotion models.ProductPromotion
 	if err := database.DB.First(&promotion, id).Error; err != nil {
-		c.JSON(http.StatusNotFound, gin.H{"status": "error", "message": "Promotion not found", "data": err.Error()})
+		c.JSON(http.StatusNotFound, models.MessageResponse{Message: "Promotion not found"})
 		return
 	}
-	c.JSON(http.StatusOK, gin.H{"status": "success", "message": "Promotion fetched", "data": promotion})
+	c.JSON(http.StatusOK, ProductPromotionResponse{Data: promotion})
 }
 
 // UpdatePromotion handles updating an existing promotion
@@ -109,22 +128,21 @@ func GetProductPromotion(c *gin.Context) {
 // @Security BearerAuth
 // @Param   id      path    int     true        "Promotion ID"
 // @Param   promotion body    models.ProductPromotion true "Promotion data to update"
-// @Success 200 {object} map[string]interface{}
-// @Failure 400 {object} map[string]interface{}
-// @Failure 401 {object} map[string]interface{}
-// @Failure 404 {object} map[string]interface{}
+// @Success 200 {object} models.MessageResponse
+// @Failure 400 {object} models.MessageResponse
+// @Failure 404 {object} models.MessageResponse
 // @Router /product-promotions/{id} [put]
 func UpdateProductPromotion(c *gin.Context) {
 	id := c.Param("id")
 	var promotion models.ProductPromotion
 	if err := c.ShouldBindJSON(&promotion); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"status": "error", "message": "Invalid request body", "data": err.Error()})
+		c.JSON(http.StatusBadRequest, models.MessageResponse{Message: "Invalid request body"})
 		return
 	}
 
 	var existingPromotion models.ProductPromotion
 	if err := database.DB.First(&existingPromotion, id).Error; err != nil {
-		c.JSON(http.StatusNotFound, gin.H{"status": "error", "message": "Promotion not found", "data": err.Error()})
+		c.JSON(http.StatusNotFound, models.MessageResponse{Message: "Promotion not found"})
 		return
 	}
 
@@ -143,35 +161,35 @@ func UpdateProductPromotion(c *gin.Context) {
 	switch existingPromotion.PromotionType {
 	case "buy_x_get_y":
 		if existingPromotion.BuyProductID == nil || existingPromotion.GetProductID == nil {
-			c.JSON(http.StatusBadRequest, gin.H{"status": "error", "message": "BuyProductID and GetProductID are required for buy_x_get_y promotion"})
+			c.JSON(http.StatusBadRequest, models.MessageResponse{Message: "BuyProductID and GetProductID are required for buy_x_get_y promotion"})
 			return
 		}
 	case "percentage_discount", "fixed_discount":
 		if existingPromotion.DiscountValue <= 0 {
-			c.JSON(http.StatusBadRequest, gin.H{"status": "error", "message": "DiscountValue must be greater than 0 for discount promotions"})
+			c.JSON(http.StatusBadRequest, models.MessageResponse{Message: "DiscountValue must be greater than 0 for discount promotions"})
 			return
 		}
 	case "bundle_price":
 		if existingPromotion.RequiredQuantity == nil || existingPromotion.PromoPrice == nil || *existingPromotion.RequiredQuantity <= 0 || *existingPromotion.PromoPrice <= 0 {
-			c.JSON(http.StatusBadRequest, gin.H{"status": "error", "message": "RequiredQuantity and PromoPrice must be greater than 0 for bundle_price promotion"})
+			c.JSON(http.StatusBadRequest, models.MessageResponse{Message: "RequiredQuantity and PromoPrice must be greater than 0 for bundle_price promotion"})
 			return
 		}
 	default:
-		c.JSON(http.StatusBadRequest, gin.H{"status": "error", "message": "Invalid promotion type"})
+		c.JSON(http.StatusBadRequest, models.MessageResponse{Message: "Invalid promotion type"})
 		return
 	}
 
 	if existingPromotion.EndDate.Before(existingPromotion.StartDate) {
-		c.JSON(http.StatusBadRequest, gin.H{"status": "error", "message": "End date cannot be before start date"})
+		c.JSON(http.StatusBadRequest, models.MessageResponse{Message: "End date cannot be before start date"})
 		return
 	}
 
 	if err := database.DB.Save(&existingPromotion).Error; err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"status": "error", "message": "Could not update promotion", "data": err.Error()})
+		c.JSON(http.StatusInternalServerError, models.MessageResponse{Message: "Could not update promotion"})
 		return
 	}
 
-	c.JSON(http.StatusOK, gin.H{"status": "success", "message": "Promotion updated", "data": existingPromotion})
+	c.JSON(http.StatusOK, models.MessageResponse{Message: "Promotion updated"})
 }
 
 // DeletePromotion handles deleting a promotion
@@ -181,22 +199,22 @@ func UpdateProductPromotion(c *gin.Context) {
 // @Produce  json
 // @Security BearerAuth
 // @Param   id      path    int     true        "Promotion ID"
-// @Success 200 {object} map[string]interface{}
-// @Failure 401 {object} map[string]interface{}
-// @Failure 404 {object} map[string]interface{}
+// @Success 200 {object} models.MessageResponse
+// @Failure 401 {object} models.MessageResponse
+// @Failure 404 {object} models.MessageResponse
 // @Router /product-promotions/{id} [delete]
 func DeleteProductPromotion(c *gin.Context) {
 	id := c.Param("id")
 	var promotion models.ProductPromotion
 	if err := database.DB.First(&promotion, id).Error; err != nil {
-		c.JSON(http.StatusNotFound, gin.H{"status": "error", "message": "Promotion not found", "data": err.Error()})
+		c.JSON(http.StatusNotFound, models.MessageResponse{Message: "Promotion not found"})
 		return
 	}
 
 	if err := database.DB.Delete(&promotion).Error; err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"status": "error", "message": "Could not delete promotion", "data": err.Error()})
+		c.JSON(http.StatusInternalServerError, models.MessageResponse{Message: "Could not delete promotion"})
 		return
 	}
 
-	c.JSON(http.StatusOK, gin.H{"status": "success", "message": "Product Promotion deleted"})
+	c.JSON(http.StatusOK, models.MessageResponse{Message: "Product Promotion deleted"})
 }
