@@ -20,7 +20,7 @@ This is a simple inventory management API built with Go and Gin. It provides end
 
 1. Clone the repository:
    ```sh
-   git clone https://github.com/esaprakoso/post-api.git
+   git clone https://github.com/esaprakoso/pos-api.git
    ```
 2. Install dependencies:
    ```sh
