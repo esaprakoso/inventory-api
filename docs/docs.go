@@ -47,29 +47,25 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "type": "object",
-                            "additionalProperties": true
+                            "$ref": "#/definitions/handlers.LoginResponse"
                         }
                     },
                     "400": {
                         "description": "Bad Request",
                         "schema": {
-                            "type": "object",
-                            "additionalProperties": true
+                            "$ref": "#/definitions/handlers.ErrorResponse"
                         }
                     },
                     "401": {
                         "description": "Unauthorized",
                         "schema": {
-                            "type": "object",
-                            "additionalProperties": true
+                            "$ref": "#/definitions/handlers.ErrorResponse"
                         }
                     },
                     "404": {
                         "description": "Not Found",
                         "schema": {
-                            "type": "object",
-                            "additionalProperties": true
+                            "$ref": "#/definitions/handlers.ErrorResponse"
                         }
                     }
                 }
@@ -95,10 +91,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "type": "object",
-                            "additionalProperties": {
-                                "type": "string"
-                            }
+                            "$ref": "#/definitions/handlers.RefreshTokenInput"
                         }
                     }
                 ],
@@ -106,22 +99,19 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "type": "object",
-                            "additionalProperties": true
+                            "$ref": "#/definitions/handlers.LoginResponse"
                         }
                     },
                     "400": {
                         "description": "Bad Request",
                         "schema": {
-                            "type": "object",
-                            "additionalProperties": true
+                            "$ref": "#/definitions/handlers.ErrorResponse"
                         }
                     },
                     "401": {
                         "description": "Unauthorized",
                         "schema": {
-                            "type": "object",
-                            "additionalProperties": true
+                            "$ref": "#/definitions/handlers.ErrorResponse"
                         }
                     }
                 }
@@ -155,29 +145,25 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "type": "object",
-                            "additionalProperties": true
+                            "$ref": "#/definitions/models.User"
                         }
                     },
                     "400": {
                         "description": "Bad Request",
                         "schema": {
-                            "type": "object",
-                            "additionalProperties": true
+                            "$ref": "#/definitions/handlers.ErrorResponse"
                         }
                     },
                     "406": {
                         "description": "Not Acceptable",
                         "schema": {
-                            "type": "object",
-                            "additionalProperties": true
+                            "$ref": "#/definitions/handlers.ErrorResponse"
                         }
                     },
                     "500": {
                         "description": "Internal Server Error",
                         "schema": {
-                            "type": "object",
-                            "additionalProperties": true
+                            "$ref": "#/definitions/handlers.ErrorResponse"
                         }
                     }
                 }
@@ -507,7 +493,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/handlers.CreateCategoryInput"
+                            "$ref": "#/definitions/handlers.CategoryInput"
                         }
                     }
                 ],
@@ -629,7 +615,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/handlers.UpdateCategoryInput"
+                            "$ref": "#/definitions/handlers.CategoryInput"
                         }
                     }
                 ],
@@ -1184,7 +1170,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/handlers.CreateProductInput"
+                            "$ref": "#/definitions/handlers.ProductInput"
                         }
                     }
                 ],
@@ -1306,7 +1292,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/handlers.UpdateProductInput"
+                            "$ref": "#/definitions/handlers.ProductInput"
                         }
                     }
                 ],
@@ -1828,7 +1814,7 @@ const docTemplate = `{
         }
     },
     "definitions": {
-        "handlers.CreateCategoryInput": {
+        "handlers.CategoryInput": {
             "type": "object",
             "required": [
                 "name"
@@ -1875,28 +1861,6 @@ const docTemplate = `{
                 }
             }
         },
-        "handlers.CreateProductInput": {
-            "type": "object",
-            "required": [
-                "name",
-                "price",
-                "sku"
-            ],
-            "properties": {
-                "category_id": {
-                    "type": "integer"
-                },
-                "name": {
-                    "type": "string"
-                },
-                "price": {
-                    "type": "number"
-                },
-                "sku": {
-                    "type": "string"
-                }
-            }
-        },
         "handlers.CreateUserInput": {
             "type": "object",
             "required": [
@@ -1916,6 +1880,14 @@ const docTemplate = `{
                 }
             }
         },
+        "handlers.ErrorResponse": {
+            "type": "object",
+            "properties": {
+                "message": {
+                    "type": "string"
+                }
+            }
+        },
         "handlers.LoginInput": {
             "type": "object",
             "required": [
@@ -1931,33 +1903,18 @@ const docTemplate = `{
                 }
             }
         },
-        "handlers.UpdateCategoryInput": {
+        "handlers.LoginResponse": {
             "type": "object",
-            "required": [
-                "name"
-            ],
             "properties": {
-                "name": {
-                    "type": "string"
-                }
-            }
-        },
-        "handlers.UpdatePasswordInput": {
-            "type": "object",
-            "required": [
-                "confirm_password",
-                "password"
-            ],
-            "properties": {
-                "confirm_password": {
+                "refresh_token": {
                     "type": "string"
                 },
-                "password": {
+                "token": {
                     "type": "string"
                 }
             }
         },
-        "handlers.UpdateProductInput": {
+        "handlers.ProductInput": {
             "type": "object",
             "required": [
                 "name",
@@ -1975,6 +1932,29 @@ const docTemplate = `{
                     "type": "number"
                 },
                 "sku": {
+                    "type": "string"
+                }
+            }
+        },
+        "handlers.RefreshTokenInput": {
+            "type": "object",
+            "properties": {
+                "refresh_token": {
+                    "type": "string"
+                }
+            }
+        },
+        "handlers.UpdatePasswordInput": {
+            "type": "object",
+            "required": [
+                "confirm_password",
+                "password"
+            ],
+            "properties": {
+                "confirm_password": {
+                    "type": "string"
+                },
+                "password": {
                     "type": "string"
                 }
             }
@@ -2122,6 +2102,32 @@ const docTemplate = `{
                     "type": "string"
                 },
                 "updated_at": {
+                    "type": "string"
+                }
+            }
+        },
+        "models.User": {
+            "type": "object",
+            "properties": {
+                "created_at": {
+                    "type": "string"
+                },
+                "deleted_at": {
+                    "type": "string"
+                },
+                "id": {
+                    "type": "integer"
+                },
+                "name": {
+                    "type": "string"
+                },
+                "role": {
+                    "type": "string"
+                },
+                "updated_at": {
+                    "type": "string"
+                },
+                "username": {
                     "type": "string"
                 }
             }

@@ -1,6 +1,6 @@
 basePath: /api
 definitions:
-  handlers.CreateCategoryInput:
+  handlers.CategoryInput:
     properties:
       name:
         type: string
@@ -32,21 +32,6 @@ definitions:
     - payment_method
     - user_id
     type: object
-  handlers.CreateProductInput:
-    properties:
-      category_id:
-        type: integer
-      name:
-        type: string
-      price:
-        type: number
-      sku:
-        type: string
-    required:
-    - name
-    - price
-    - sku
-    type: object
   handlers.CreateUserInput:
     properties:
       name:
@@ -60,6 +45,11 @@ definitions:
     - password
     - username
     type: object
+  handlers.ErrorResponse:
+    properties:
+      message:
+        type: string
+    type: object
   handlers.LoginInput:
     properties:
       password:
@@ -70,24 +60,14 @@ definitions:
     - password
     - username
     type: object
-  handlers.UpdateCategoryInput:
+  handlers.LoginResponse:
     properties:
-      name:
+      refresh_token:
         type: string
-    required:
-    - name
+      token:
+        type: string
     type: object
-  handlers.UpdatePasswordInput:
-    properties:
-      confirm_password:
-        type: string
-      password:
-        type: string
-    required:
-    - confirm_password
-    - password
-    type: object
-  handlers.UpdateProductInput:
+  handlers.ProductInput:
     properties:
       category_id:
         type: integer
@@ -101,6 +81,21 @@ definitions:
     - name
     - price
     - sku
+    type: object
+  handlers.RefreshTokenInput:
+    properties:
+      refresh_token:
+        type: string
+    type: object
+  handlers.UpdatePasswordInput:
+    properties:
+      confirm_password:
+        type: string
+      password:
+        type: string
+    required:
+    - confirm_password
+    - password
     type: object
   handlers.UpdateProfileInput:
     properties:
@@ -203,6 +198,23 @@ definitions:
       updated_at:
         type: string
     type: object
+  models.User:
+    properties:
+      created_at:
+        type: string
+      deleted_at:
+        type: string
+      id:
+        type: integer
+      name:
+        type: string
+      role:
+        type: string
+      updated_at:
+        type: string
+      username:
+        type: string
+    type: object
 host: localhost:3000
 info:
   contact: {}
@@ -232,23 +244,19 @@ paths:
         "200":
           description: OK
           schema:
-            additionalProperties: true
-            type: object
+            $ref: '#/definitions/handlers.LoginResponse'
         "400":
           description: Bad Request
           schema:
-            additionalProperties: true
-            type: object
+            $ref: '#/definitions/handlers.ErrorResponse'
         "401":
           description: Unauthorized
           schema:
-            additionalProperties: true
-            type: object
+            $ref: '#/definitions/handlers.ErrorResponse'
         "404":
           description: Not Found
           schema:
-            additionalProperties: true
-            type: object
+            $ref: '#/definitions/handlers.ErrorResponse'
       summary: Login a user
       tags:
       - Auth
@@ -263,27 +271,22 @@ paths:
         name: token
         required: true
         schema:
-          additionalProperties:
-            type: string
-          type: object
+          $ref: '#/definitions/handlers.RefreshTokenInput'
       produces:
       - application/json
       responses:
         "200":
           description: OK
           schema:
-            additionalProperties: true
-            type: object
+            $ref: '#/definitions/handlers.LoginResponse'
         "400":
           description: Bad Request
           schema:
-            additionalProperties: true
-            type: object
+            $ref: '#/definitions/handlers.ErrorResponse'
         "401":
           description: Unauthorized
           schema:
-            additionalProperties: true
-            type: object
+            $ref: '#/definitions/handlers.ErrorResponse'
       summary: Refresh access token
       tags:
       - Auth
@@ -305,23 +308,19 @@ paths:
         "200":
           description: OK
           schema:
-            additionalProperties: true
-            type: object
+            $ref: '#/definitions/models.User'
         "400":
           description: Bad Request
           schema:
-            additionalProperties: true
-            type: object
+            $ref: '#/definitions/handlers.ErrorResponse'
         "406":
           description: Not Acceptable
           schema:
-            additionalProperties: true
-            type: object
+            $ref: '#/definitions/handlers.ErrorResponse'
         "500":
           description: Internal Server Error
           schema:
-            additionalProperties: true
-            type: object
+            $ref: '#/definitions/handlers.ErrorResponse'
       summary: Register a new user
       tags:
       - Auth
@@ -532,7 +531,7 @@ paths:
         name: category
         required: true
         schema:
-          $ref: '#/definitions/handlers.CreateCategoryInput'
+          $ref: '#/definitions/handlers.CategoryInput'
       produces:
       - application/json
       responses:
@@ -644,7 +643,7 @@ paths:
         name: category
         required: true
         schema:
-          $ref: '#/definitions/handlers.UpdateCategoryInput'
+          $ref: '#/definitions/handlers.CategoryInput'
       produces:
       - application/json
       responses:
@@ -978,7 +977,7 @@ paths:
         name: product
         required: true
         schema:
-          $ref: '#/definitions/handlers.CreateProductInput'
+          $ref: '#/definitions/handlers.ProductInput'
       produces:
       - application/json
       responses:
@@ -1090,7 +1089,7 @@ paths:
         name: product
         required: true
         schema:
-          $ref: '#/definitions/handlers.UpdateProductInput'
+          $ref: '#/definitions/handlers.ProductInput'
       produces:
       - application/json
       responses:

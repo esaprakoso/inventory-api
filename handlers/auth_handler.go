@@ -33,6 +33,19 @@ type LoginInput struct {
 	Password string `json:"password" binding:"required"`
 }
 
+type LoginResponse struct {
+	Token        string `json:"token"`
+	RefreshToken string `json:"refresh_token"`
+}
+
+type RefreshTokenInput struct {
+	RefreshToken string `json:"refresh_token"`
+}
+
+type ErrorResponse struct {
+	Message string `json:"message"`
+}
+
 func generateRefreshToken() (string, error) {
 	b := make([]byte, 32)
 	if _, err := rand.Read(b); err != nil {
@@ -47,25 +60,31 @@ func generateRefreshToken() (string, error) {
 // @Accept  json
 // @Produce  json
 // @Param   user     body    CreateUserInput     true        "User registration info"
-// @Success 200 {object} map[string]interface{}
-// @Failure 400 {object} map[string]interface{}
-// @Failure 406 {object} map[string]interface{}
-// @Failure 500 {object} map[string]interface{}
+// @Success 200 {object} models.User
+// @Failure 400 {object} ErrorResponse
+// @Failure 406 {object} ErrorResponse
+// @Failure 500 {object} ErrorResponse
 // @Router /auth/register [post]
 func Register(c *gin.Context) {
 	var data CreateUserInput
 
 	if err := c.ShouldBindJSON(&data); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"message": err.Error()})
+		c.JSON(http.StatusBadRequest, ErrorResponse{
+			Message: err.Error(),
+		})
 		return
 	}
 	isDup, err := utils.IsDuplicate[models.User](database.DB, "username", data.Username, nil)
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"message": "Database error"})
+		c.JSON(http.StatusInternalServerError, ErrorResponse{
+			Message: "Database error",
+		})
 		return
 	}
 	if isDup {
-		c.JSON(406, gin.H{"message": "Username already exists"})
+		c.JSON(406, ErrorResponse{
+			Message: "Username already exists",
+		})
 		return
 	}
 
@@ -89,16 +108,18 @@ func Register(c *gin.Context) {
 // @Accept  json
 // @Produce  json
 // @Param   credentials body LoginInput true "User login credentials"
-// @Success 200 {object} map[string]interface{}
-// @Failure 400 {object} map[string]interface{}
-// @Failure 401 {object} map[string]interface{}
-// @Failure 404 {object} map[string]interface{}
+// @Success 200 {object} LoginResponse
+// @Failure 400 {object} ErrorResponse
+// @Failure 401 {object} ErrorResponse
+// @Failure 404 {object} ErrorResponse
 // @Router /auth/login [post]
 func Login(c *gin.Context) {
 	var data LoginInput
 
 	if err := c.ShouldBindJSON(&data); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"message": err.Error()})
+		c.JSON(http.StatusBadRequest, ErrorResponse{
+			Message: err.Error(),
+		})
 		return
 	}
 
@@ -107,15 +128,15 @@ func Login(c *gin.Context) {
 	database.DB.Where("username = ?", data.Username).First(&user)
 
 	if user.ID == 0 {
-		c.JSON(http.StatusNotFound, gin.H{
-			"message": "User not found",
+		c.JSON(http.StatusNotFound, ErrorResponse{
+			Message: "User not found",
 		})
 		return
 	}
 
 	if err := bcrypt.CompareHashAndPassword([]byte(user.Password), []byte(data.Password)); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{
-			"message": "Incorrect password",
+		c.JSON(http.StatusBadRequest, ErrorResponse{
+			Message: "Incorrect password",
 		})
 		return
 	}
@@ -132,24 +153,26 @@ func Login(c *gin.Context) {
 	tokenString, err := token.SignedString([]byte(config.LoadConfig("JWT_SECRET")))
 
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{
-			"message": "Could not login",
+		c.JSON(http.StatusInternalServerError, ErrorResponse{
+			Message: "Could not login",
 		})
 		return
 	}
 
 	refreshToken, err := generateRefreshToken()
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"message": "Could not generate refresh token"})
+		c.JSON(http.StatusInternalServerError, ErrorResponse{
+			Message: "Could not generate refresh token",
+		})
 		return
 	}
 
 	user.RefreshToken = refreshToken
 	database.DB.Save(&user)
 
-	c.JSON(http.StatusOK, gin.H{
-		"token":         tokenString,
-		"refresh_token": refreshToken,
+	c.JSON(http.StatusOK, LoginResponse{
+		Token:        tokenString,
+		RefreshToken: refreshToken,
 	})
 }
 
@@ -158,10 +181,10 @@ func Login(c *gin.Context) {
 // @Tags Auth
 // @Accept  json
 // @Produce  json
-// @Param   token    body    map[string]string true "Refresh token"
-// @Success 200 {object} map[string]interface{}
-// @Failure 400 {object} map[string]interface{}
-// @Failure 401 {object} map[string]interface{}
+// @Param   token    body    RefreshTokenInput true "Refresh token"
+// @Success 200 {object} LoginResponse
+// @Failure 400 {object} ErrorResponse
+// @Failure 401 {object} ErrorResponse
 // @Router /auth/refresh [post]
 func RefreshToken(c *gin.Context) {
 	var data struct {
@@ -169,7 +192,7 @@ func RefreshToken(c *gin.Context) {
 	}
 
 	if err := c.BindJSON(&data); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"message": "Invalid request body"})
+		c.JSON(http.StatusBadRequest, ErrorResponse{Message: "Invalid request body"})
 		return
 	}
 
@@ -177,7 +200,7 @@ func RefreshToken(c *gin.Context) {
 	database.DB.Where("refresh_token = ?", data.RefreshToken).First(&user)
 
 	if user.ID == 0 {
-		c.JSON(http.StatusUnauthorized, gin.H{"message": "Invalid refresh token"})
+		c.JSON(http.StatusUnauthorized, ErrorResponse{Message: "Invalid refresh token"})
 		return
 	}
 
@@ -191,22 +214,21 @@ func RefreshToken(c *gin.Context) {
 	token := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
 	tokenString, err := token.SignedString([]byte(config.LoadConfig("JWT_SECRET")))
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"message": "Could not generate access token"})
+		c.JSON(http.StatusInternalServerError, ErrorResponse{Message: "Could not generate access token"})
 		return
 	}
 
 	// Generate new refresh token
 	newRefreshToken, err := generateRefreshToken()
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"message": "Could not generate new refresh token"})
+		c.JSON(http.StatusInternalServerError, ErrorResponse{Message: "Could not generate new refresh token"})
 		return
 	}
 
 	user.RefreshToken = newRefreshToken
 	database.DB.Save(&user)
-
-	c.JSON(http.StatusOK, gin.H{
-		"token":         tokenString,
-		"refresh_token": newRefreshToken,
+	c.JSON(http.StatusOK, LoginResponse{
+		Token:        tokenString,
+		RefreshToken: newRefreshToken,
 	})
 }
