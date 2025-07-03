@@ -39,8 +39,8 @@ type StockTransaction struct {
 	CreatedAt time.Time               `json:"created_at"`
 	UpdatedAt time.Time               `json:"updated_at"`
 	DeletedAt gorm.DeletedAt          `gorm:"index" json:"deleted_at,omitempty"`
-	StockID   uint                    `json:"stock_id"`
-	Stock     Stock                   `json:"stock"`
+		ProductID uint                    `json:"product_id"`
+	Product   Product                 `gorm:"foreignKey:ProductID;constraint:OnUpdate:CASCADE,OnDelete:SET NULL;" json:"-"`
 	UserID    uint                    `json:"user_id"`
 	User      User                    `json:"user"`
 	Quantity  int                     `json:"quantity"` // Quantity is always positive

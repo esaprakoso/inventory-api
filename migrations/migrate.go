@@ -9,11 +9,12 @@ import (
 func Migrate() {
 	database.DB.AutoMigrate(
 		&models.User{},
-
+		&models.Order{},
+		&models.OrderItem{},
 		&models.Category{},
 		&models.Product{},
-		&models.Stock{},
 		&models.StockTransaction{},
+		&models.Promotion{},
 	)
 	fmt.Println("Database Migrated")
 }
