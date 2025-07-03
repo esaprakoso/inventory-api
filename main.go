@@ -1,11 +1,11 @@
 package main
 
 import (
-	"inventory/database"
-	"inventory/routes"
 	"log"
+	"pos/database"
+	"pos/routes"
 
-	"inventory/validators"
+	"pos/validators"
 
 	"github.com/gin-gonic/gin"
 	"github.com/gin-gonic/gin/binding"

@@ -1,13 +1,13 @@
 package handlers
 
 import (
-	"inventory/database"
-	"inventory/models"
 	"net/http"
+	"pos/database"
+	"pos/models"
 
 	"github.com/gin-gonic/gin"
 
-	"inventory/utils"
+	"pos/utils"
 )
 
 func GetAllProducts(c *gin.Context) {

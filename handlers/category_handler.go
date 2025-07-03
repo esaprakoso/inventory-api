@@ -1,11 +1,11 @@
 package handlers
 
 import (
-	"inventory/database"
-	"inventory/models"
 	"net/http"
+	"pos/database"
+	"pos/models"
 
-	"inventory/utils"
+	"pos/utils"
 
 	"github.com/gin-gonic/gin"
 )

@@ -1,9 +1,9 @@
 package middleware
 
 import (
-	"inventory/database"
-	"inventory/models"
 	"net/http"
+	"pos/database"
+	"pos/models"
 	"strconv"
 
 	"github.com/gin-gonic/gin"

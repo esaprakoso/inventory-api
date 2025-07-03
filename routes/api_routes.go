@@ -1,8 +1,8 @@
 package routes
 
 import (
-	"inventory/handlers"
-	"inventory/middleware"
+	"pos/handlers"
+	"pos/middleware"
 
 	"github.com/gin-gonic/gin"
 )
@@ -26,8 +26,6 @@ func SetupRoutes(app *gin.Engine) {
 	api.GET("/profile", middleware.Protected(), handlers.GetUserProfile)
 	api.PATCH("/profile", middleware.Protected(), handlers.GetUserProfile)
 	api.PATCH("/profile/password", middleware.Protected(), handlers.UpdateProfilePassword)
-
-	
 
 	// Product routes
 	api.GET("/products", middleware.Protected(), handlers.GetAllProducts)

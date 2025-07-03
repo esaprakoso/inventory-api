@@ -1,9 +1,9 @@
 package middleware
 
 import (
-	"inventory/config"
-	"inventory/handlers"
 	"net/http"
+	"pos/config"
+	"pos/handlers"
 	"strings"
 
 	"github.com/gin-gonic/gin"

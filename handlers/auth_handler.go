@@ -3,14 +3,14 @@ package handlers
 import (
 	"crypto/rand"
 	"encoding/base64"
-	"inventory/config"
-	"inventory/database"
-	"inventory/models"
 	"net/http"
+	"pos/config"
+	"pos/database"
+	"pos/models"
 	"strconv"
 	"time"
 
-	"inventory/utils"
+	"pos/utils"
 
 	"github.com/gin-gonic/gin"
 	"github.com/golang-jwt/jwt/v4"

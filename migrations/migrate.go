@@ -2,14 +2,14 @@ package migrations
 
 import (
 	"fmt"
-	"inventory/database"
-	"inventory/models"
+	"pos/database"
+	"pos/models"
 )
 
 func Migrate() {
 	database.DB.AutoMigrate(
 		&models.User{},
-		
+
 		&models.Category{},
 		&models.Product{},
 		&models.Stock{},

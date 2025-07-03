@@ -1,8 +1,8 @@
 package main
 
 import (
-	"inventory/database"
-	"inventory/migrations"
+	"pos/database"
+	"pos/migrations"
 )
 
 func main() {

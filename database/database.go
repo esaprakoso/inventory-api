@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"log"
 
-	"inventory/config"
+	"pos/config"
 
 	"os"
 	"time"
