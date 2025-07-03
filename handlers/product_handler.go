@@ -17,11 +17,11 @@ import (
 
 type ProductResponse struct {
 	models.Product
-	CategoryName     string            `json:"category_name"`
-	Quantity         int               `json:"quantity"`
-	ReservedQuantity int               `json:"reserved_quantity"`
-	DiscountedPrice  float64           `json:"discounted_price"`
-	ActivePromotion  *models.Promotion `json:"active_promotion,omitempty"`
+	CategoryName     string                   `json:"category_name"`
+	Quantity         int                      `json:"quantity"`
+	ReservedQuantity int                      `json:"reserved_quantity"`
+	DiscountedPrice  float64                  `json:"discounted_price"`
+	ActivePromotion  *models.ProductPromotion `json:"active_promotion,omitempty"`
 }
 
 func GetAllProducts(c *gin.Context) {
@@ -199,10 +199,10 @@ func UpdateProductStock(c *gin.Context) {
 	id := c.Param("id")
 
 	type UpdateStockInput struct {
-		Quantity  int                            `json:"quantity" binding:"required,gt=0"`
-		Type      models.StockTransactionType    `json:"type" binding:"required,oneof=in out"`
-		SubType   models.StockTransactionSubType `json:"sub_type" binding:"required"`
-		Notes     string                         `json:"notes"`
+		Quantity int                            `json:"quantity" binding:"required,gt=0"`
+		Type     models.StockTransactionType    `json:"type" binding:"required,oneof=in out"`
+		SubType  models.StockTransactionSubType `json:"sub_type" binding:"required"`
+		Notes    string                         `json:"notes"`
 	}
 
 	var data UpdateStockInput

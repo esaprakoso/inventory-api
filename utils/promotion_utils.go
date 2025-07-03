@@ -34,3 +34,14 @@ func CalculateDiscountedPrice(product models.Product) (float64, *models.Promotio
 
 	return discountedPrice, activePromotion
 }
+
+// CalculateCartDiscount calculates a cart-level discount based on total purchase amount.
+func CalculateCartDiscount(subTotal float64) float64 {
+	const minPurchaseForDiscount = 50000.0
+	const discountPercentage = 10.0
+
+	if subTotal >= minPurchaseForDiscount {
+		return subTotal * (discountPercentage / 100)
+	}
+	return 0.0
+}

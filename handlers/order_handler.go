@@ -150,7 +150,11 @@ func CreateOrder(c *gin.Context) {
 	order.GrossTotal = grossTotal
 	order.ItemDiscountTotal = itemDiscountTotal
 	order.SubTotal = grossTotal - itemDiscountTotal
-	order.TotalAmount = order.SubTotal - order.CartDiscount // Assuming CartDiscount is 0 for now
+
+	// Calculate cart-level discount
+	order.CartDiscount = utils.CalculateCartDiscount(order.SubTotal)
+
+	order.TotalAmount = order.SubTotal - order.CartDiscount
 
 	if err := tx.Save(&order).Error; err != nil {
 		tx.Rollback()
