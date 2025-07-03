@@ -3,10 +3,10 @@ package handlers
 import (
 	"errors"
 	"fmt"
-	"inventory/database"
-	"inventory/models"
-	"inventory/utils"
 	"net/http"
+	"pos/database"
+	"pos/models"
+	"pos/utils"
 	"strconv"
 
 	"github.com/gin-gonic/gin"
