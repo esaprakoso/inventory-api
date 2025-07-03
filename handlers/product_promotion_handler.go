@@ -10,7 +10,7 @@ import (
 )
 
 // CreatePromotion handles the creation of a new promotion
-func CreatePromotion(c *gin.Context) {
+func CreateProductPromotion(c *gin.Context) {
 	var promotion models.ProductPromotion
 	if err := c.ShouldBindJSON(&promotion); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"status": "error", "message": "Invalid request body", "data": err.Error()})
@@ -47,14 +47,14 @@ func CreatePromotion(c *gin.Context) {
 }
 
 // GetPromotions handles fetching all promotions
-func GetPromotions(c *gin.Context) {
+func GetProductPromotions(c *gin.Context) {
 	var promotions []models.ProductPromotion
 	database.DB.Find(&promotions)
 	c.JSON(http.StatusOK, gin.H{"status": "success", "message": "Promotions fetched", "data": promotions})
 }
 
 // GetPromotion handles fetching a single promotion by ID
-func GetPromotion(c *gin.Context) {
+func GetProductPromotion(c *gin.Context) {
 	id := c.Param("id")
 	var promotion models.ProductPromotion
 	if err := database.DB.First(&promotion, id).Error; err != nil {
@@ -65,7 +65,7 @@ func GetPromotion(c *gin.Context) {
 }
 
 // UpdatePromotion handles updating an existing promotion
-func UpdatePromotion(c *gin.Context) {
+func UpdateProductPromotion(c *gin.Context) {
 	id := c.Param("id")
 	var promotion models.ProductPromotion
 	if err := c.ShouldBindJSON(&promotion); err != nil {
@@ -118,7 +118,7 @@ func UpdatePromotion(c *gin.Context) {
 }
 
 // DeletePromotion handles deleting a promotion
-func DeletePromotion(c *gin.Context) {
+func DeleteProductPromotion(c *gin.Context) {
 	id := c.Param("id")
 	var promotion models.ProductPromotion
 	if err := database.DB.First(&promotion, id).Error; err != nil {

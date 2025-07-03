@@ -3,13 +3,14 @@ package utils
 import (
 	"time"
 
+	"pos/database"
 	"pos/models"
 )
 
 // CalculateDiscountedPrice calculates the discounted price of a product based on active promotions.
-func CalculateDiscountedPrice(product models.Product) (float64, *models.Promotion) {
+func CalculateDiscountedPrice(product models.Product) (float64, *models.ProductPromotion) {
 	now := time.Now()
-	var activePromotion *models.Promotion
+	var activePromotion *models.ProductPromotion
 	discountedPrice := product.Price
 
 	for i := range product.Promotions {
@@ -37,11 +38,22 @@ func CalculateDiscountedPrice(product models.Product) (float64, *models.Promotio
 
 // CalculateCartDiscount calculates a cart-level discount based on total purchase amount.
 func CalculateCartDiscount(subTotal float64) float64 {
-	const minPurchaseForDiscount = 50000.0
-	const discountPercentage = 10.0
+	var activeCartPromotion models.CartPromotion
+	now := time.Now()
 
-	if subTotal >= minPurchaseForDiscount {
-		return subTotal * (discountPercentage / 100)
+	// Find an active cart promotion that applies to the current subTotal
+	database.DB.Where(
+		"minimum_purchase_amount <= ? AND start_date <= ? AND end_date >= ?",
+		subTotal, now, now,
+	).First(&activeCartPromotion)
+
+	if activeCartPromotion.ID != 0 {
+		switch activeCartPromotion.PromotionType {
+		case "percentage_discount":
+			return subTotal * (activeCartPromotion.DiscountValue / 100)
+		case "fixed_discount":
+			return activeCartPromotion.DiscountValue
+		}
 	}
 	return 0.0
 }

@@ -10,12 +10,19 @@ import (
 func SetupRoutes(app *gin.Engine) {
 	api := app.Group("/api")
 
-	// Promotion routes
-	api.POST("/promotions", middleware.Protected(), middleware.AuthorizeRole("admin"), handlers.CreatePromotion)
-	api.GET("/promotions", middleware.Protected(), handlers.GetPromotions)
-	api.GET("/promotions/:id", middleware.Protected(), handlers.GetPromotion)
-	api.PUT("/promotions/:id", middleware.Protected(), middleware.AuthorizeRole("admin"), handlers.UpdatePromotion)
-	api.DELETE("/promotions/:id", middleware.Protected(), middleware.AuthorizeRole("admin"), handlers.DeletePromotion)
+	// Product Promotion routes
+	api.POST("/product-promotions", middleware.Protected(), middleware.AuthorizeRole("admin"), handlers.CreateProductPromotion)
+	api.GET("/product-promotions", middleware.Protected(), handlers.GetProductPromotions)
+	api.GET("/product-promotions/:id", middleware.Protected(), handlers.GetProductPromotion)
+	api.PUT("/product-promotions/:id", middleware.Protected(), middleware.AuthorizeRole("admin"), handlers.UpdateProductPromotion)
+	api.DELETE("/product-promotions/:id", middleware.Protected(), middleware.AuthorizeRole("admin"), handlers.DeleteProductPromotion)
+
+	// Cart Promotion routes
+	api.POST("/cart-promotions", middleware.Protected(), middleware.AuthorizeRole("admin"), handlers.CreateCartPromotion)
+	api.GET("/cart-promotions", middleware.Protected(), handlers.GetCartPromotions)
+	api.GET("/cart-promotions/:id", middleware.Protected(), handlers.GetCartPromotion)
+	api.PUT("/cart-promotions/:id", middleware.Protected(), middleware.AuthorizeRole("admin"), handlers.UpdateCartPromotion)
+	api.DELETE("/cart-promotions/:id", middleware.Protected(), middleware.AuthorizeRole("admin"), handlers.DeleteCartPromotion)
 
 	// Order routes
 	api.POST("/orders", middleware.Protected(), handlers.CreateOrder)

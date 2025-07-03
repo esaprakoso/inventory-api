@@ -15,6 +15,7 @@ func Migrate() {
 		&models.Product{},
 		&models.StockTransaction{},
 		&models.ProductPromotion{},
+		&models.CartPromotion{},
 	)
 	fmt.Println("Database Migrated")
 }
