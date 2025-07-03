@@ -10,11 +10,7 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
-type CreateCategoryInput struct {
-	Name string `json:"name" binding:"required"`
-}
-
-type UpdateCategoryInput struct {
+type CategoryInput struct {
 	Name string `json:"name" binding:"required"`
 }
 
@@ -53,7 +49,7 @@ func GetCategories(c *gin.Context) {
 // @Accept  json
 // @Produce  json
 // @Security BearerAuth
-// @Param   category body    CreateCategoryInput true "Category data"
+// @Param   category body    CategoryInput true "Category data"
 // @Success 201 {object} map[string]interface{}
 // @Failure 400 {object} map[string]interface{}
 // @Failure 401 {object} map[string]interface{}
@@ -61,7 +57,7 @@ func GetCategories(c *gin.Context) {
 // @Failure 500 {object} map[string]interface{}
 // @Router /categories [post]
 func StoreCategory(c *gin.Context) {
-	var data CreateCategoryInput
+	var data CategoryInput
 
 	if err := c.ShouldBindJSON(&data); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"message": err.Error()})
@@ -122,7 +118,7 @@ func GetCategoryByID(c *gin.Context) {
 // @Produce  json
 // @Security BearerAuth
 // @Param   id      path    int     true        "Category ID"
-// @Param   category body    UpdateCategoryInput true "Category data to update"
+// @Param   category body    CategoryInput true "Category data to update"
 // @Success 200 {object} map[string]interface{}
 // @Failure 400 {object} map[string]interface{}
 // @Failure 401 {object} map[string]interface{}
@@ -131,7 +127,7 @@ func GetCategoryByID(c *gin.Context) {
 // @Router /categories/{id} [put]
 func UpdateCategoryByID(c *gin.Context) {
 	id := c.Param("id")
-	var data UpdateCategoryInput
+	var data CategoryInput
 
 	if err := c.ShouldBindJSON(&data); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"message": err.Error()})

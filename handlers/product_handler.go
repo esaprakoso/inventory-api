@@ -15,14 +15,7 @@ import (
 	"pos/utils"
 )
 
-type CreateProductInput struct {
-	Name       string  `json:"name" binding:"required"`
-	Price      float64 `json:"price" binding:"required"`
-	SKU        string  `json:"sku" binding:"required"`
-	CategoryID *uint   `json:"category_id"`
-}
-
-type UpdateProductInput struct {
+type ProductInput struct {
 	Name       string  `json:"name" binding:"required"`
 	Price      float64 `json:"price" binding:"required"`
 	SKU        string  `json:"sku" binding:"required"`
@@ -87,7 +80,7 @@ func GetAllProducts(c *gin.Context) {
 // @Accept  json
 // @Produce  json
 // @Security BearerAuth
-// @Param   product body CreateProductInput true "Product data"
+// @Param   product body ProductInput true "Product data"
 // @Success 201 {object} map[string]interface{}
 // @Failure 400 {object} map[string]interface{}
 // @Failure 401 {object} map[string]interface{}
@@ -95,7 +88,7 @@ func GetAllProducts(c *gin.Context) {
 // @Failure 500 {object} map[string]interface{}
 // @Router /products [post]
 func StoreProduct(c *gin.Context) {
-	var data CreateProductInput
+	var data ProductInput
 
 	if err := c.ShouldBindJSON(&data); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"message": err.Error()})
@@ -175,7 +168,7 @@ func GetProductByID(c *gin.Context) {
 // @Produce  json
 // @Security BearerAuth
 // @Param   id      path    int     true        "Product ID"
-// @Param   product body UpdateProductInput true "Product data to update"
+// @Param   product body ProductInput true "Product data to update"
 // @Success 200 {object} map[string]interface{}
 // @Failure 400 {object} map[string]interface{}
 // @Failure 401 {object} map[string]interface{}
@@ -184,7 +177,7 @@ func GetProductByID(c *gin.Context) {
 // @Router /products/{id} [put]
 func UpdateProductByID(c *gin.Context) {
 	id := c.Param("id")
-	var data UpdateProductInput
+	var data ProductInput
 
 	if err := c.ShouldBindJSON(&data); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"message": err.Error()})
@@ -253,7 +246,7 @@ func DeleteProductByID(c *gin.Context) {
 }
 
 type UpdateStockInput struct {
-	Quantity int `json:"quantity" binding:"required"`
+	Quantity int    `json:"quantity" binding:"required"`
 	Type     string `json:"type" binding:"required,oneof=in out"`
 	SubType  string `json:"sub_type" binding:"required"`
 	Notes    string `json:"notes"`
