@@ -11,6 +11,23 @@ import (
 	"golang.org/x/crypto/bcrypt"
 )
 
+type UpdateUserInput struct {
+	Username string  `json:"username" binding:"required"`
+	Name     string  `json:"name" binding:"required"`
+	Role     string  `json:"role" binding:"required,oneof=admin user"`
+	Password *string `json:"password"`
+}
+
+// @Summary Get all users
+// @Description Get a list of all users. Admin only.
+// @Tags Users
+// @Produce  json
+// @Security BearerAuth
+// @Param   page      query    int     false        "Page number"
+// @Param   limit     query    int     false        "Number of items per page"
+// @Success 200 {object} map[string]interface{}
+// @Failure 401 {object} map[string]interface{}
+// @Router /users [get]
 func GetAllUsers(c *gin.Context) {
 	var users []models.User
 	var total int64
@@ -30,6 +47,16 @@ func GetAllUsers(c *gin.Context) {
 	})
 }
 
+// @Summary Get a user by ID
+// @Description Get a single user by their ID. Admin only.
+// @Tags Users
+// @Produce  json
+// @Security BearerAuth
+// @Param   id      path    int     true        "User ID"
+// @Success 200 {object} map[string]interface{}
+// @Failure 401 {object} map[string]interface{}
+// @Failure 404 {object} map[string]interface{}
+// @Router /users/{id} [get]
 func GetUserByID(c *gin.Context) {
 	id := c.Param("id")
 
@@ -48,15 +75,22 @@ func GetUserByID(c *gin.Context) {
 	})
 }
 
+// @Summary Update a user by ID
+// @Description Update a user's details by their ID. Admin only.
+// @Tags Users
+// @Accept  json
+// @Produce  json
+// @Security BearerAuth
+// @Param   id      path    int     true        "User ID"
+// @Param   user    body    UpdateUserInput true    "User data to update"
+// @Success 200 {object} map[string]interface{}
+// @Failure 400 {object} map[string]interface{}
+// @Failure 401 {object} map[string]interface{}
+// @Failure 404 {object} map[string]interface{}
+// @Failure 406 {object} map[string]interface{}
+// @Router /users/{id} [patch]
 func UpdateUserByID(c *gin.Context) {
 	id := c.Param("id")
-	type UpdateUserInput struct {
-		Username string  `json:"username" binding:"required"`
-		Name     string  `json:"name" binding:"required"`
-		Role     string  `json:"role" binding:"required,oneof=admin user"`
-		Password *string `json:"password"`
-	}
-
 	var data UpdateUserInput
 
 	if err := c.ShouldBindJSON(&data); err != nil {
@@ -101,6 +135,16 @@ func UpdateUserByID(c *gin.Context) {
 	c.JSON(http.StatusOK, user)
 }
 
+// @Summary Delete a user by ID
+// @Description Delete a user by their ID. Admin only.
+// @Tags Users
+// @Produce  json
+// @Security BearerAuth
+// @Param   id      path    int     true        "User ID"
+// @Success 200 {object} map[string]interface{}
+// @Failure 401 {object} map[string]interface{}
+// @Failure 404 {object} map[string]interface{}
+// @Router /users/{id} [delete]
 func DeleteUserByID(c *gin.Context) {
 	id := c.Param("id")
 

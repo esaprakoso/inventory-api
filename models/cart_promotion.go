@@ -10,7 +10,7 @@ type CartPromotion struct {
 	ID                    uint           `gorm:"primarykey" json:"id"`
 	CreatedAt             time.Time      `json:"created_at"`
 	UpdatedAt             time.Time      `json:"updated_at"`
-	DeletedAt             gorm.DeletedAt `gorm:"index" json:"deleted_at,omitempty"`
+	DeletedAt             gorm.DeletedAt `gorm:"index" json:"deleted_at,omitempty" swaggertype:"string"`
 	PromotionType         string         `json:"promotion_type"` // e.g., "percentage_discount", "fixed_discount"
 	DiscountValue         float64        `json:"discount_value"`
 	MinimumPurchaseAmount float64        `json:"minimum_purchase_amount"`

@@ -22,6 +22,17 @@ type AuthClaims struct {
 	Issuer string `json:"issuer"`
 }
 
+type CreateUserInput struct {
+	Username string  `json:"username" binding:"required"`
+	Name     string  `json:"name" binding:"required"`
+	Password *string `json:"password" binding:"required"`
+}
+
+type LoginInput struct {
+	Username string `json:"username" binding:"required"`
+	Password string `json:"password" binding:"required"`
+}
+
 func generateRefreshToken() (string, error) {
 	b := make([]byte, 32)
 	if _, err := rand.Read(b); err != nil {
@@ -30,12 +41,18 @@ func generateRefreshToken() (string, error) {
 	return base64.URLEncoding.EncodeToString(b), nil
 }
 
+// @Summary Register a new user
+// @Description Register a new user with username, name, and password.
+// @Tags Auth
+// @Accept  json
+// @Produce  json
+// @Param   user     body    CreateUserInput     true        "User registration info"
+// @Success 200 {object} map[string]interface{}
+// @Failure 400 {object} map[string]interface{}
+// @Failure 406 {object} map[string]interface{}
+// @Failure 500 {object} map[string]interface{}
+// @Router /auth/register [post]
 func Register(c *gin.Context) {
-	type CreateUserInput struct {
-		Username string  `json:"username" binding:"required"`
-		Name     string  `json:"name" binding:"required"`
-		Password *string `json:"password" binding:"required"`
-	}
 	var data CreateUserInput
 
 	if err := c.ShouldBindJSON(&data); err != nil {
@@ -66,11 +83,18 @@ func Register(c *gin.Context) {
 	c.JSON(http.StatusOK, user)
 }
 
+// @Summary Login a user
+// @Description Login a user with username and password to get access and refresh tokens.
+// @Tags Auth
+// @Accept  json
+// @Produce  json
+// @Param   credentials body LoginInput true "User login credentials"
+// @Success 200 {object} map[string]interface{}
+// @Failure 400 {object} map[string]interface{}
+// @Failure 401 {object} map[string]interface{}
+// @Failure 404 {object} map[string]interface{}
+// @Router /auth/login [post]
 func Login(c *gin.Context) {
-	type LoginInput struct {
-		Username string `json:"username" binding:"required"`
-		Password string `json:"password" binding:"required"`
-	}
 	var data LoginInput
 
 	if err := c.ShouldBindJSON(&data); err != nil {
@@ -129,6 +153,16 @@ func Login(c *gin.Context) {
 	})
 }
 
+// @Summary Refresh access token
+// @Description Refresh an expired access token using a refresh token.
+// @Tags Auth
+// @Accept  json
+// @Produce  json
+// @Param   token    body    map[string]string true "Refresh token"
+// @Success 200 {object} map[string]interface{}
+// @Failure 400 {object} map[string]interface{}
+// @Failure 401 {object} map[string]interface{}
+// @Router /auth/refresh [post]
 func RefreshToken(c *gin.Context) {
 	var data struct {
 		RefreshToken string `json:"refresh_token"`

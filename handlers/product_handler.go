@@ -15,6 +15,20 @@ import (
 	"pos/utils"
 )
 
+type CreateProductInput struct {
+	Name       string  `json:"name" binding:"required"`
+	Price      float64 `json:"price" binding:"required"`
+	SKU        string  `json:"sku" binding:"required"`
+	CategoryID *uint   `json:"category_id"`
+}
+
+type UpdateProductInput struct {
+	Name       string  `json:"name" binding:"required"`
+	Price      float64 `json:"price" binding:"required"`
+	SKU        string  `json:"sku" binding:"required"`
+	CategoryID *uint   `json:"category_id"`
+}
+
 type ProductResponse struct {
 	models.Product
 	CategoryName     string                   `json:"category_name"`
@@ -24,6 +38,16 @@ type ProductResponse struct {
 	ActivePromotion  *models.ProductPromotion `json:"active_promotion,omitempty"`
 }
 
+// @Summary Get all products
+// @Description Get a list of all products with pagination.
+// @Tags Products
+// @Produce  json
+// @Security BearerAuth
+// @Param   page      query    int     false        "Page number"
+// @Param   limit     query    int     false        "Number of items per page"
+// @Success 200 {object} map[string]interface{}
+// @Failure 401 {object} map[string]interface{}
+// @Router /products [get]
 func GetAllProducts(c *gin.Context) {
 	var products []models.Product
 	var total int64
@@ -39,7 +63,7 @@ func GetAllProducts(c *gin.Context) {
 
 	var productResponses []ProductResponse
 	for _, p := range products {
-		discountedPrice, activePromotion := utils.CalculateDiscountedPrice(p)
+		discountedPrice, activePromotion := utils.CalculateTotalPrice(p, 1)
 		productResponses = append(productResponses, ProductResponse{
 			Product:         p,
 			CategoryName:    p.Category.Name,
@@ -57,14 +81,20 @@ func GetAllProducts(c *gin.Context) {
 	})
 }
 
+// @Summary Create a new product
+// @Description Create a new product. Admin only.
+// @Tags Products
+// @Accept  json
+// @Produce  json
+// @Security BearerAuth
+// @Param   product body CreateProductInput true "Product data"
+// @Success 201 {object} map[string]interface{}
+// @Failure 400 {object} map[string]interface{}
+// @Failure 401 {object} map[string]interface{}
+// @Failure 406 {object} map[string]interface{}
+// @Failure 500 {object} map[string]interface{}
+// @Router /products [post]
 func StoreProduct(c *gin.Context) {
-	type CreateProductInput struct {
-		Name       string  `json:"name" binding:"required"`
-		Price      float64 `json:"price" binding:"required"`
-		SKU        string  `json:"sku" binding:"required"`
-		CategoryID *uint   `json:"category_id"`
-	}
-
 	var data CreateProductInput
 
 	if err := c.ShouldBindJSON(&data); err != nil {
@@ -99,6 +129,16 @@ func StoreProduct(c *gin.Context) {
 	c.JSON(http.StatusOK, gin.H{"message": "Product Created"})
 }
 
+// @Summary Get a product by ID
+// @Description Get a single product by its ID.
+// @Tags Products
+// @Produce  json
+// @Security BearerAuth
+// @Param   id      path    int     true        "Product ID"
+// @Success 200 {object} map[string]interface{}
+// @Failure 401 {object} map[string]interface{}
+// @Failure 404 {object} map[string]interface{}
+// @Router /products/{id} [get]
 func GetProductByID(c *gin.Context) {
 	id := c.Param("id")
 
@@ -112,7 +152,7 @@ func GetProductByID(c *gin.Context) {
 		return
 	}
 
-	discountedPrice, activePromotion := utils.CalculateDiscountedPrice(product)
+	discountedPrice, activePromotion := utils.CalculateTotalPrice(product, 1)
 
 	productResponse := ProductResponse{
 		Product:          product,
@@ -128,15 +168,22 @@ func GetProductByID(c *gin.Context) {
 	})
 }
 
+// @Summary Update a product by ID
+// @Description Update a product's details by its ID. Admin only.
+// @Tags Products
+// @Accept  json
+// @Produce  json
+// @Security BearerAuth
+// @Param   id      path    int     true        "Product ID"
+// @Param   product body UpdateProductInput true "Product data to update"
+// @Success 200 {object} map[string]interface{}
+// @Failure 400 {object} map[string]interface{}
+// @Failure 401 {object} map[string]interface{}
+// @Failure 404 {object} map[string]interface{}
+// @Failure 406 {object} map[string]interface{}
+// @Router /products/{id} [put]
 func UpdateProductByID(c *gin.Context) {
 	id := c.Param("id")
-
-	type UpdateProductInput struct {
-		Name       string  `json:"name" binding:"required"`
-		Price      float64 `json:"price" binding:"required"`
-		SKU        string  `json:"sku" binding:"required"`
-		CategoryID *uint   `json:"category_id"`
-	}
 	var data UpdateProductInput
 
 	if err := c.ShouldBindJSON(&data); err != nil {
@@ -176,6 +223,16 @@ func UpdateProductByID(c *gin.Context) {
 	})
 }
 
+// @Summary Delete a product by ID
+// @Description Delete a product by its ID. Admin only.
+// @Tags Products
+// @Produce  json
+// @Security BearerAuth
+// @Param   id      path    int     true        "Product ID"
+// @Success 200 {object} map[string]interface{}
+// @Failure 401 {object} map[string]interface{}
+// @Failure 404 {object} map[string]interface{}
+// @Router /products/{id} [delete]
 func DeleteProductByID(c *gin.Context) {
 	id := c.Param("id")
 
@@ -195,6 +252,26 @@ func DeleteProductByID(c *gin.Context) {
 	})
 }
 
+type UpdateStockInput struct {
+	Quantity int `json:"quantity" binding:"required"`
+	Type     string `json:"type" binding:"required,oneof=in out"`
+	SubType  string `json:"sub_type" binding:"required"`
+	Notes    string `json:"notes"`
+}
+
+// @Summary Update product stock
+// @Description Update the stock of a product. Admin only.
+// @Tags Products
+// @Accept  json
+// @Produce  json
+// @Security BearerAuth
+// @Param   id      path    int     true        "Product ID"
+// @Param   stock_update body UpdateStockInput true "Stock update info"
+// @Success 200 {object} map[string]interface{}
+// @Failure 400 {object} map[string]interface{}
+// @Failure 401 {object} map[string]interface{}
+// @Failure 404 {object} map[string]interface{}
+// @Router /products/{id}/stock [patch]
 func UpdateProductStock(c *gin.Context) {
 	id := c.Param("id")
 

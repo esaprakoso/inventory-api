@@ -7,12 +7,12 @@ import (
 	"pos/models"
 )
 
-// CalculateDiscountedPrice calculates the discounted price of a product based on active promotions.
-func CalculateDiscountedPrice(product models.Product) (float64, *models.ProductPromotion) {
+// CalculateTotalPrice calculates the total price for a given quantity of a product, applying the best active promotion.
+func CalculateTotalPrice(product models.Product, quantity int) (float64, *models.ProductPromotion) {
 	now := time.Now()
 	var activePromotion *models.ProductPromotion
-	discountedPrice := product.Price
 
+	// Find the first active promotion for the product
 	for i := range product.Promotions {
 		p := &product.Promotions[i]
 		if now.After(p.StartDate) && now.Before(p.EndDate) {
@@ -21,19 +21,29 @@ func CalculateDiscountedPrice(product models.Product) (float64, *models.ProductP
 		}
 	}
 
+	totalPrice := product.Price * float64(quantity)
+
 	if activePromotion != nil {
 		switch activePromotion.PromotionType {
+		case "bundle_price":
+			if activePromotion.RequiredQuantity != nil && activePromotion.PromoPrice != nil && *activePromotion.RequiredQuantity > 0 {
+				numBundles := quantity / *activePromotion.RequiredQuantity
+				remainingItems := quantity % *activePromotion.RequiredQuantity
+				totalPrice = float64(numBundles)*(*activePromotion.PromoPrice) + float64(remainingItems)*product.Price
+			}
 		case "percentage_discount":
-			discountedPrice = product.Price * (1 - activePromotion.DiscountValue/100)
+			discountedPrice := product.Price * (1 - activePromotion.DiscountValue/100)
+			totalPrice = discountedPrice * float64(quantity)
 		case "fixed_discount":
-			discountedPrice = product.Price - activePromotion.DiscountValue
+			discountedPrice := product.Price - activePromotion.DiscountValue
+			totalPrice = discountedPrice * float64(quantity)
 		}
-		if discountedPrice < 0 {
-			discountedPrice = 0
+		if totalPrice < 0 {
+			totalPrice = 0
 		}
 	}
 
-	return discountedPrice, activePromotion
+	return totalPrice, activePromotion
 }
 
 // CalculateCartDiscount calculates a cart-level discount based on total purchase amount.

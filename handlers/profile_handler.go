@@ -11,6 +11,25 @@ import (
 	"golang.org/x/crypto/bcrypt"
 )
 
+type UpdateProfileInput struct {
+	Username string `json:"username" binding:"required"`
+	Name     string `json:"name" binding:"required"`
+}
+
+type UpdatePasswordInput struct {
+	Password        string `json:"password" binding:"required"`
+	ConfirmPassword string `json:"confirm_password" binding:"required,eqfield=Password"`
+}
+
+// @Summary Get user profile
+// @Description Get the profile of the currently logged-in user.
+// @Tags Profile
+// @Produce  json
+// @Security BearerAuth
+// @Success 200 {object} map[string]interface{}
+// @Failure 401 {object} map[string]interface{}
+// @Failure 404 {object} map[string]interface{}
+// @Router /profile [get]
 func GetUserProfile(c *gin.Context) {
 	userID := c.GetString("user_id")
 
@@ -29,12 +48,19 @@ func GetUserProfile(c *gin.Context) {
 	})
 }
 
+// @Summary Update user profile
+// @Description Update the profile of the currently logged-in user.
+// @Tags Profile
+// @Accept  json
+// @Produce  json
+// @Security BearerAuth
+// @Param   user    body    UpdateProfileInput true    "User data to update"
+// @Success 200 {object} map[string]interface{}
+// @Failure 400 {object} map[string]interface{}
+// @Failure 401 {object} map[string]interface{}
+// @Router /profile [patch]
 func UpdateProfile(c *gin.Context) {
 	id := c.GetString("user_id")
-	type UpdateProfileInput struct {
-		Username string `json:"username" binding:"required"`
-		Name     string `json:"name" binding:"required"`
-	}
 	var data UpdateProfileInput
 
 	if err := c.ShouldBindJSON(&data); err != nil {
@@ -70,12 +96,19 @@ func UpdateProfile(c *gin.Context) {
 	c.JSON(http.StatusOK, user)
 }
 
+// @Summary Update user password
+// @Description Update the password of the currently logged-in user.
+// @Tags Profile
+// @Accept  json
+// @Produce  json
+// @Security BearerAuth
+// @Param   password_info body UpdatePasswordInput true "Password update info"
+// @Success 200 {object} map[string]interface{}
+// @Failure 400 {object} map[string]interface{}
+// @Failure 401 {object} map[string]interface{}
+// @Router /profile/password [patch]
 func UpdateProfilePassword(c *gin.Context) {
 	id := c.GetString("user_id")
-	type UpdatePasswordInput struct {
-		Password        string `json:"password" binding:"required"`
-		ConfirmPassword string `json:"confirm_password" binding:"required,eqfield=Password"`
-	}
 	var data UpdatePasswordInput
 
 	if err := c.ShouldBindJSON(&data); err != nil {

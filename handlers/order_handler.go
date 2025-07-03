@@ -22,6 +22,18 @@ type CreateOrderInput struct {
 }
 
 // CreateOrder handles the creation of a new order
+// @Summary Create a new order
+// @Description Create a new order with specified products and payment method.
+// @Tags Orders
+// @Accept  json
+// @Produce  json
+// @Security BearerAuth
+// @Param   order   body    CreateOrderInput true "Order details"
+// @Success 201 {object} map[string]interface{}
+// @Failure 400 {object} map[string]interface{}
+// @Failure 401 {object} map[string]interface{}
+// @Failure 500 {object} map[string]interface{}
+// @Router /orders [post]
 func CreateOrder(c *gin.Context) {
 	var input CreateOrderInput
 	if err := c.ShouldBindJSON(&input); err != nil {
@@ -90,32 +102,24 @@ func CreateOrder(c *gin.Context) {
 			return
 		}
 
-		// Calculate discounted price for the product
-		discountedPrice, activePromotion := utils.CalculateDiscountedPrice(product)
-		itemPrice := product.Price
-		itemDiscount := 0.0
-
-		if activePromotion != nil {
-			// Apply discount if active promotion is percentage or fixed discount
-			if activePromotion.PromotionType == "percentage_discount" || activePromotion.PromotionType == "fixed_discount" {
-				itemPrice = discountedPrice
-				itemDiscount = product.Price - discountedPrice
-			}
-		}
+		// Calculate total price for the item, considering quantity and promotions
+		totalItemPrice, activePromotion := utils.CalculateTotalPrice(product, itemInput.Quantity)
+		originalItemTotal := product.Price * float64(itemInput.Quantity)
+		itemDiscount := originalItemTotal - totalItemPrice
 
 		orderItem := models.OrderItem{
 			OrderID:         order.ID,
 			ProductID:       product.ID,
 			Quantity:        itemInput.Quantity,
-			Price:           product.Price, // Original price
-			DiscountedPrice: itemPrice,     // Price after item-specific discount
-			ItemDiscount:    itemDiscount,  // Discount amount for this item
+			Price:           product.Price,  // Original price per unit
+			DiscountedPrice: totalItemPrice, // Total price for all units of this item after discount
+			ItemDiscount:    itemDiscount,   // Total discount for all units of this item
 			IsFreeItem:      false,
 		}
 		orderItems = append(orderItems, orderItem)
 
-		grossTotal += product.Price * float64(itemInput.Quantity)
-		itemDiscountTotal += itemDiscount * float64(itemInput.Quantity)
+		grossTotal += originalItemTotal
+		itemDiscountTotal += itemDiscount
 
 		// Handle "buy X get Y" promotion
 		if activePromotion != nil && activePromotion.PromotionType == "buy_x_get_y" {
@@ -167,6 +171,14 @@ func CreateOrder(c *gin.Context) {
 }
 
 // GetOrders handles fetching all orders
+// @Summary Get all orders
+// @Description Get a list of all orders. Admin can see all, users see their own.
+// @Tags Orders
+// @Produce  json
+// @Security BearerAuth
+// @Success 200 {object} map[string]interface{}
+// @Failure 401 {object} map[string]interface{}
+// @Router /orders [get]
 func GetOrders(c *gin.Context) {
 	var orders []models.Order
 	database.DB.Preload("OrderItems.Product").Find(&orders)
@@ -174,6 +186,16 @@ func GetOrders(c *gin.Context) {
 }
 
 // GetOrderByID handles fetching a single order by ID
+// @Summary Get an order by ID
+// @Description Get a single order by its ID. Admin can see any order, users see their own.
+// @Tags Orders
+// @Produce  json
+// @Security BearerAuth
+// @Param   id      path    int     true        "Order ID"
+// @Success 200 {object} map[string]interface{}
+// @Failure 401 {object} map[string]interface{}
+// @Failure 404 {object} map[string]interface{}
+// @Router /orders/{id} [get]
 func GetOrderByID(c *gin.Context) {
 	id := c.Param("id")
 	var order models.Order

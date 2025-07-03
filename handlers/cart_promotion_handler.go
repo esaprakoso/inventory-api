@@ -10,6 +10,18 @@ import (
 )
 
 // CreateCartPromotion handles the creation of a new cart promotion
+// @Summary Create a new cart promotion
+// @Description Create a new cart promotion. Admin only.
+// @Tags Promotions
+// @Accept  json
+// @Produce  json
+// @Security BearerAuth
+// @Param   promotion body    models.CartPromotion true "Promotion data"
+// @Success 201 {object} map[string]interface{}
+// @Failure 400 {object} map[string]interface{}
+// @Failure 401 {object} map[string]interface{}
+// @Failure 500 {object} map[string]interface{}
+// @Router /cart-promotions [post]
 func CreateCartPromotion(c *gin.Context) {
 	var cartPromotion models.CartPromotion
 	if err := c.ShouldBindJSON(&cartPromotion); err != nil {
@@ -47,6 +59,14 @@ func CreateCartPromotion(c *gin.Context) {
 }
 
 // GetCartPromotions handles fetching all cart promotions
+// @Summary Get all cart promotions
+// @Description Get a list of all cart promotions.
+// @Tags Promotions
+// @Produce  json
+// @Security BearerAuth
+// @Success 200 {object} map[string]interface{}
+// @Failure 401 {object} map[string]interface{}
+// @Router /cart-promotions [get]
 func GetCartPromotions(c *gin.Context) {
 	var cartPromotions []models.CartPromotion
 	database.DB.Find(&cartPromotions)
@@ -54,6 +74,16 @@ func GetCartPromotions(c *gin.Context) {
 }
 
 // GetCartPromotion handles fetching a single cart promotion by ID
+// @Summary Get a cart promotion by ID
+// @Description Get a single cart promotion by its ID.
+// @Tags Promotions
+// @Produce  json
+// @Security BearerAuth
+// @Param   id      path    int     true        "Promotion ID"
+// @Success 200 {object} map[string]interface{}
+// @Failure 401 {object} map[string]interface{}
+// @Failure 404 {object} map[string]interface{}
+// @Router /cart-promotions/{id} [get]
 func GetCartPromotion(c *gin.Context) {
 	id := c.Param("id")
 	var cartPromotion models.CartPromotion
@@ -65,6 +95,19 @@ func GetCartPromotion(c *gin.Context) {
 }
 
 // UpdateCartPromotion handles updating an existing cart promotion
+// @Summary Update a cart promotion by ID
+// @Description Update a cart promotion's details by its ID. Admin only.
+// @Tags Promotions
+// @Accept  json
+// @Produce  json
+// @Security BearerAuth
+// @Param   id      path    int     true        "Promotion ID"
+// @Param   promotion body    models.CartPromotion true "Promotion data to update"
+// @Success 200 {object} map[string]interface{}
+// @Failure 400 {object} map[string]interface{}
+// @Failure 401 {object} map[string]interface{}
+// @Failure 404 {object} map[string]interface{}
+// @Router /cart-promotions/{id} [put]
 func UpdateCartPromotion(c *gin.Context) {
 	id := c.Param("id")
 	var cartPromotion models.CartPromotion
@@ -115,6 +158,16 @@ func UpdateCartPromotion(c *gin.Context) {
 }
 
 // DeleteCartPromotion handles deleting a cart promotion
+// @Summary Delete a cart promotion by ID
+// @Description Delete a cart promotion by its ID. Admin only.
+// @Tags Promotions
+// @Produce  json
+// @Security BearerAuth
+// @Param   id      path    int     true        "Promotion ID"
+// @Success 200 {object} map[string]interface{}
+// @Failure 401 {object} map[string]interface{}
+// @Failure 404 {object} map[string]interface{}
+// @Router /cart-promotions/{id} [delete]
 func DeleteCartPromotion(c *gin.Context) {
 	id := c.Param("id")
 	var cartPromotion models.CartPromotion
